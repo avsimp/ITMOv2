@@ -6,3 +6,19 @@
 Проверка: make test.
 Зависимости: стандартная библиотека Python 3.10+.
 
+## Подписка и отписка
+
+Функции находятся в `service.py` и принимают строковое имя:
+
+- `subscribe(name)` добавляет подписчика и возвращает `{"subscribed": True}`, в том числе при повторной подписке.
+- `unsubscribe(name)` удаляет подписчика и возвращает `{"unsubscribed": True}`, если имя было в множестве. Для неизвестного имени или повторной отписки возвращает `{"unsubscribed": False}`. Остальные подписчики сохраняются.
+
+Обе функции удаляют пробелы по краям имени с помощью `strip()`. Пустая строка или строка только из пробельных символов вызывает `ValueError("empty name")` без изменения подписчиков. Регистр учитывается: `Ann` и `ann` — разные имена.
+
+```python
+from service import subscribe, unsubscribe
+
+subscribe("Ann")       # {"subscribed": True}
+unsubscribe(" Ann ")   # {"unsubscribed": True}
+unsubscribe("Ann")     # {"unsubscribed": False}
+```
