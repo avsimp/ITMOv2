@@ -16,3 +16,7 @@ def unsubscribe(name):
         return {"unsubscribed": False}
     subscribers.remove(name)
     return {"unsubscribed": True}
+
+
+def list_subscribers():
+    return sorted(subscribers)
