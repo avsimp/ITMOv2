@@ -1,0 +1,34 @@
+{
+  "suite": "demo",
+  "source_sha256": {
+    "Makefile": "7a2570dd2c7d0ce6f99a457f2b71b50f9dc1df042cba1e5f6bcf5cfa6c4ebef7",
+    "README.md": "5ae7b40a1eb237b415c2d1dd8badf40a928f0ca2c93b575c633366706845c58a",
+    "opencode.json": "4e28020d38735b526752e7f81b2536e24f11d2145b2a0c74bccc3cc49c8b8885",
+    "service.py": "ecac77b689331d189f22b89e018b0ca1d27733ef24a162283f89aff92afa319d",
+    "test_service.py": "dd81c5c9d327c5ac3c69e870c0f4fec61166c1eeb6b8ec7872d49499d832a7e1"
+  },
+  "snapshot_unchanged": true,
+  "unique_sessions": true,
+  "records": [
+    {
+      "text": "При вызовах `subscribe(\" Ann \")` и `subscribe(\"Ann\")`:\n\n1. **Возврат функции**: оба раза вернётся `{\"subscribed\": True}` (service.py, строка 8).\n2. **Количество подписчиков**: останется **1** (test_service.py, строка 20; README.md, строка 4).\n3. **Причина**: в `subscribe` используется `name.strip()` для удаления пробелов, а подписчики хранятся в множестве (`set`). Множество не допускает дубликатов, поэтому `\" Ann \"` и `\"Ann\"` после `.strip()` превращаются в одно и то же значение `\"Ann\"`, что добавляется только один раз.",
+      "session_ids": [
+        "ses_eee75541cffeWmPWZbWbS2005D"
+      ],
+      "tools": [
+        "read",
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Что вернёт subscribe при последовательных вызовах с \" Ann \" и \"Ann\", сколько подписчиков останется и почему?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 21.895,
+      "technical_pass": true
+    }
+  ]
+}

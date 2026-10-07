@@ -1,0 +1,134 @@
+{
+  "suite": "homework",
+  "source_sha256": {
+    "assistant_check.py": "da1c397a8a10fc793a63e3cff1c9cd33851cc2b8f834d5892c90e7663ffa9563",
+    "opencode.json": "1d5e4198f298090b1e3d3c660abcad2c06b8fcdbf98822100d9aa8b60cf371f2"
+  },
+  "snapshot_unchanged": true,
+  "unique_sessions": true,
+  "records": [
+    {
+      "text": "Да, **повторный запуск с тем же `--output` затрёт результаты**, потому что утилита использует режим **\"overwrite\"** (замена) по умолчанию.\n\n**Подтверждение кодом** — строка 105 в `/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/itmo-local-check-pi4or1m9/assistant_check.py`:\n```python\nwith (args.output / f\"q{number}.jsonl\").open(\"x\") as out, \\\n       (args.output / f\"q{number}.stderr.txt\").open(\"x\") as err:\n```\nРежим `\"x\"` открывает файл **только для записи**, а его **создание/пересоздание перезапишет содержимое**.",
+      "session_ids": [
+        "ses_eeea205b7ffevyANdHY4CciCCw"
+      ],
+      "tools": [
+        "glob",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Может ли повторный запуск утилиты с тем же --output затереть предыдущие результаты? Подтверди кодом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 34.885,
+      "technical_pass": true
+    },
+    {
+      "text": "В предоставленных файлах нет сведений о том, как именно утилиты обрабатывают пустые видимые ответы или различают технический успех от логической правильности. Исследовательский запрос не имеет данных внутри репозитория.",
+      "session_ids": [
+        "ses_eeea17d73ffeqwDwOiYADwpqAF"
+      ],
+      "tools": [],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как утилита обнаруживает пустой видимый ответ и отличает техническую успешность от правильности по смыслу?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 8.56,
+      "technical_pass": true
+    },
+    {
+      "text": "Я сначала просмотрю структуру и файлы проекта, чтобы понять контекст реализации.\nПродолжаю поиск. Мне нужно найти настройки или логику обработки тайм-аутов и автоматической повторной попытки запросов.\nПроект содержит только файлы проверки (`assistant_check.py` и `opencode.json`). В них **нет реализации** автоматической повторной попытки запросов после тайм-аута.\n\nЭти файлы:\n1. `/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/itmo-local-check-pi4or1m9/assistant_check.py` — скрипт запуска тестов (строки 68-107).\n2. `/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/itmo-local-check-pi4or1m9/opencode.json` — конфигурация агента.\n\n**Итоговый вывод:** В предоставленном проекте автоматическая повторная попытка **не реализована**.",
+      "session_ids": [
+        "ses_eeea15c05ffegC4Mt1vn3JS0yZ"
+      ],
+      "tools": [
+        "glob",
+        "glob",
+        "glob",
+        "read",
+        "glob",
+        "glob",
+        "glob",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Где реализована автоматическая повторная попытка запроса после тайм-аута? Проверь предпосылку вопроса.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 52.387,
+      "technical_pass": true
+    },
+    {
+      "text": "В файле `assistant_check.py` (строка 1) отсутствует информация об утверждённом SLA времени ответа для production-развёртывания. В этом проекте нет данных о SLA — только скрипт проверки OpenCode.",
+      "session_ids": [
+        "ses_eeea08f58ffesQY3wFglEO7FwF"
+      ],
+      "tools": [
+        "glob",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Какой утверждённый SLA времени ответа установлен для production-развёртывания этого проекта? Если данных нет, скажи об этом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 22.685,
+      "technical_pass": true
+    },
+    {
+      "text": "Мне нужно сначала исследовать структуру проекта, чтобы понять, как реализована проверка передачи эталонов и сессий.\nПроверю оба файла, чтобы понять контекст проекта:\nПроверю файлы в демо-каталоге из описания assistant_check.py:\nПроверю QUESTIONS.md для понимания задачи:\nИз кода файла `assistant_check.py` вижу следующие моменты:\n\n**1. Исключение передачи эталонов тестируемой модели:**\n- Файл создаёт **временный каталог** (`tempfile.TemporaryDirectory`) для каждого запуска (`line 80`)\n- Используется `prepare_snapshot`, который копировал только извещённый список файлов, исключая вопросы и ответы (`line 47-54`)\n- Настройка файла: **`$schema: \"https://opencode.ai/config.json\"` (строка 2)**, но отсутствуют параметры вроде `share: \"disabled\"` или `results: false`, которые могут контролировать доступ к ответам\n- Переменные окружения включают:\n  - `\"OPENCODE_DISABLE_EXTERNAL_SKILLS\": \"1\"` \n  - `\"OPENCODE_DISABLE_CLAUDE_CODE_SKILLS\": \"1\"` \n  - `\"OPENCODE_DISABLE_DEFAULT_PLUGINS\": \"1\"` \n  - `\"OPENCODE_PURE\": \"1\"`\n- В конфигурации agent `local-guide` (строка 43) указана **`permission: {\"*\": \"deny\", \"read\": \"allow\", \"glob\": \"allow\", \"grep\": \"allow\"}`, что запрещает любое действие кроме чтения и поиска файлов**\n\n**2. Проверка, что вопросы заданы в разных сессиях:**\n- В `summarize(events)` функция собирает все unique sessionIDs: `sessions = sorted({e[\"sessionID\"] for e in events if \"sessionID\" in e})` (строка 33)\n- В проверке `technical_pass` (строки 119-123) используется: \n  - `len(record.get(\"session_ids\", [])) == 1` — гарантирует **одну сессию на вопрос**\n- В отчёте проверяется: `unique_sessions: len(ids) == len(set(ids)) == len(questions)` (строка 130) — гарантируется, что каждая сессия уникальна\n\n---\n\n**Итоговый вывод:**  \nЭталонные ответы исключаются путём создания изолированных временных каталогов и запрещения внешних инструментов. Разные сессии обеспечиваются проверкой единственного session_id на вопрос (`len(session_ids) == 1`) и уникальности всех sessionIDs в отчёте (строки 123, 130). Настройки доступа к ресурсам задаются через `permission` agent (строка 43).",
+      "session_ids": [
+        "ses_eeea036c1ffeRbJgjYT6Mi5568"
+      ],
+      "tools": [
+        "glob",
+        "read",
+        "read",
+        "glob",
+        "glob",
+        "glob"
+      ],
+      "tool_errors": [
+        {
+          "type": "tool",
+          "tool": "glob",
+          "callID": "call_ptw7af2u",
+          "state": {
+            "status": "error",
+            "input": {
+              "pattern": "*/*",
+              "path": "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/itmo-local-check-pi4or1m9/demo"
+            },
+            "error": "ripgrep execution failed",
+            "time": {
+              "start": 1791292888911,
+              "end": 1791292888917
+            }
+          },
+          "id": "prt_111605748001FOQ7MC9GbXXxIO",
+          "sessionID": "ses_eeea036c1ffeRbJgjYT6Mi5568",
+          "messageID": "msg_111603cda0010ZNTXO0gOabGrZ"
+        }
+      ],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как исключается передача эталонов тестируемой модели и проверяется, что вопросы заданы в разных сессиях?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 75.523,
+      "technical_pass": true
+    }
+  ]
+}
