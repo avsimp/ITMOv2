@@ -1,0 +1,131 @@
+{
+  "suite": "homework",
+  "source_sha256": {
+    "assistant_check.py": "da1c397a8a10fc793a63e3cff1c9cd33851cc2b8f834d5892c90e7663ffa9563",
+    "opencode.json": "397ee8b2d099c8b06f73c1db479b72261aa37d09d27e802d86d8271b8831286c"
+  },
+  "snapshot_unchanged": true,
+  "unique_sessions": true,
+  "records": [
+    {
+      "text": "Да, повторный запуск утилиты с тем же `--output` затрёт предыдущие результаты — это стандартное поведение команд утилит, которые не имеют флага `--append` или `--no-overwrite`.\n\nПодтверждение кодом. Прочитать утилиты проекта:\nПрочитаю файлы утилит:\n**Да, повторный запуск затрёт предыдущие результаты.**\n\nФакт из `assistant_check.py:67-68`:\n\n```python\nparser.add_argument(\"--output\", type=Path, required=True,\n                    help=\"New result directory; existing runs are never overwritten\")\n```\nФлаг называется `never overwritten` (никогда не перезаписываются), но это **не применимо к файлам** внутри директории — он указывает, что сама директория не будет создана (если уже существует) благодаря строке `args.output.mkdir(parents=True, exist_ok=False)` на строке 78.\n\nФактическое поведение при повторном запуске с тем же `--output`:\n- Строка `if args.output.mkdir(parents=True, exist_ok=False)` на 78: если директория уже существует, `mkdir()` не создаёт её, но также не удаляет текущие файлы.\n- Однако **файлы внутри директории могут быть перезаписаны**, если команда будет пытаться записать в тот же файл (это зависит от реализации `opencode run`).\n\nВ утилите прямо не указано поведение при повторном запуске с тем же `--output` и теми же вопросами. Это зависит от поведения самой команды `opencode run`, которая может перезаписывать JSONL-файлы внутри директории. В `opencode run` обычно используется стандартный файл вывода, который перезаписывается при каждом запуске.\n\n**Итог:** Повторный запуск с тем же `--output` **может затереть предыдущие результаты**, если команда `opencode run` записывает в те же файлы вывода. Это стандартное поведение для утилит, использующих `STDOUT` → файл.",
+      "session_ids": [
+        "ses_eee86e52fffevGsVhK8FLVTRFr"
+      ],
+      "tools": [
+        "glob",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Может ли повторный запуск утилиты с тем же --output затереть предыдущие результаты? Подтверди кодом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 38.414,
+      "technical_pass": true
+    },
+    {
+      "text": "Изучив код `assistant_check.py`:\n\n**Ответ на вопрос:**\n\nУтилита обнаруживает проблемы двумя способами:\n\n1. **Техническая успешность** определяется в строках 119–123 как комбинация условий:\n   ```python\n   record[\"technical_pass\"] = bool(\n       code == 0 and record[\"text\"] and not record[\"errors\"]\n       and record[\"allowed_tools_only\"] and record.get(\"last_finish\") == \"stop\"\n       and len(record.get(\"session_ids\", [])) == 1\n   )\n   ```\n   - `code == 0` — нет ошибок запуска\n   - `record[\"text\"]` — есть текст ответа\n   - `not record[\"errors\"]` — нет исключений\n   - `record.get(\"last_finish\") == \"stop\"` — сессия завершилась корректно\n   - `len(record.get(\"session_ids\", [])) == 1` — одна сессия\n\n2. **Пустой видимый ответ** обнаруживается проверкой `record[\"text\"]` (строка 119). Если текст пустой или отсутствует — `technical_pass` = false.\n\n**Ключевой момент:** техническая успешность (`technical_pass`) ≠ правильность по смыслу. Контент проверяется только на факт наличия (`record[\"text\"]`), а не на его содержательность.\n\nФакты:\n- Стр. 119–123: определение `technical_pass`\n- Стр. 31–34: сбор текста, ошибок и состояний завершения",
+      "session_ids": [
+        "ses_eee864ec8ffetsAABnSp5Ji25V"
+      ],
+      "tools": [
+        "glob",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как утилита обнаруживает пустой видимый ответ и отличает техническую успешность от правильности по смыслу?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 28.05,
+      "technical_pass": true
+    },
+    {
+      "text": "В доступных файлах нет реализации повторной попытки (retry) с автоматической обработкой тайм-аута:\n\n1. **assistant_check.py** содержит код для запуска запросов с тайм-аутом через `subprocess.run(..., timeout=args.timeout)` (строки 98, 106–109). При наступлении тайм-аута (`subprocess.TimeoutExpired`) происходит немедленная обработка ошибки (строки 109–110):\n   ```python\n   except subprocess.TimeoutExpired:\n       timed_out, code = True, None\n   ```\n   Повторный запуск не делается.\n\n2. **Внутри опрашиваемых демо-файлов** (которые скопируются в целевую директорию только при запуске `main()`, но в текущем состоянии проекта их нет) нет файлов типа `service.py`, `test_service.py`, `README.md`, `Makefile`.\n\n**Итог:** В текущем состоянии репозитория нет кода автоматической повторной попытки после тайм-аута.",
+      "session_ids": [
+        "ses_eee85e186ffe2IjxwkTPBdQMgF"
+      ],
+      "tools": [
+        "glob",
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Где реализована автоматическая повторная попытка запроса после тайм-аута? Проверь предпосылку вопроса.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 50.011,
+      "technical_pass": true
+    },
+    {
+      "text": "Проверю файлы проекта, чтобы найти информацию об SLA времени ответа для production.\nВ проекте нет утверждённого SLA времени ответа для production-развёртывания.\n\n**Итоговый вывод:** В прочитанных файлах (`assistant_check.py` и `opencode.json`) отсутствует какая-либо информация о SLA или времени ответа production-развёртывания.",
+      "session_ids": [
+        "ses_eee851a39ffe1SQIwhXmaluz4G"
+      ],
+      "tools": [
+        "glob",
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Какой утверждённый SLA времени ответа установлен для production-развёртывания этого проекта? Если данных нет, скажи об этом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 98.548,
+      "technical_pass": true
+    },
+    {
+      "text": "Для ответа на этот вопрос мне нужно изучить структуру проекта, найти файлы, описывающие бизнес-логику, конфигурацию и тесты.\n## Итоговый вывод\n\n### Как исключается передача эталонов и проверяются разные сессии:\n\n**1. Исключение передачи эталонов:**\n- Файл `demo/service.py` — эталоны из директории репозитория **экспlicitно исключаются** из доступа agent (см. `opencode.json`: `\"permission\": {\"*\": \"deny\"}`)\n- Файлы `demo/test_service.py`, `demo/README.md`, `demo/Makefile` — включаются в snapshot как разрешённые для чтения, но **результаты тестов не передаются** модели\n\n**2. Разные сессии для разных вопросов:**\nВ `assistant_check.py` строки 126–130:\n- Проверка `unique_sessions` в отчёте `summary.json` (строка 130)\n- Условие: `len(ids) == len(set(ids)) == len(questions)` — все сессии должны быть уникальными\n- `ids = [sid for r in records for sid in r.get(\"session_ids\", [])]` (строка 127)\n\nЭто гарантирует, что каждый вопрос обрабатывается в **отдельной сессии**, а не в одной продолжительной сессии.",
+      "session_ids": [
+        "ses_eee839d2bffeM1VgE3t7j1UHYe"
+      ],
+      "tools": [
+        "glob",
+        "glob",
+        "read",
+        "read"
+      ],
+      "tool_errors": [
+        {
+          "type": "tool",
+          "tool": "glob",
+          "callID": "call_t4dipjh2",
+          "state": {
+            "status": "error",
+            "input": {
+              "pattern": "**/*",
+              "path": "/"
+            },
+            "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"external_directory\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"external_directory\",\"pattern\":\"/Users/avsimp/.local/share/opencode/tool-output/*\",\"action\":\"allow\"},{\"permission\":\"external_directory\",\"pattern\":\"/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/opencode/*\",\"action\":\"allow\"},{\"permission\":\"*\",\"action\":\"deny\",\"pattern\":\"*\"},{\"permission\":\"external_directory\",\"pattern\":\"/Users/avsimp/.local/share/opencode/tool-output/*\",\"action\":\"allow\"}]",
+            "time": {
+              "start": 1791294733577,
+              "end": 1791294733581
+            }
+          },
+          "id": "prt_1117c7cff001cw7iq5hrbW0tVU",
+          "sessionID": "ses_eee839d2bffeM1VgE3t7j1UHYe",
+          "messageID": "msg_1117c63900016zdAM1wWXSskHe"
+        }
+      ],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как исключается передача эталонов тестируемой модели и проверяется, что вопросы заданы в разных сессиях?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 34.734,
+      "technical_pass": true
+    }
+  ]
+}

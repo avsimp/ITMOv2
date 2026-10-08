@@ -1,0 +1,107 @@
+{
+  "suite": "homework",
+  "source_sha256": {
+    "assistant_check.py": "ceaecdca6e85315b073edfa7c81f2b88a06b1c69ad50c102d08bf76199f57a26",
+    "opencode.json": "c82c4b7a2c6438eb3c5525eea5d347b7967a477e375792fbff1fd67c49ace0f4",
+    "test_assistant_check.py": "362abaaea59ad9848907711ea20662621b4442f3976497e6aa9995bf7d438a4a"
+  },
+  "snapshot_unchanged": true,
+  "unique_sessions": true,
+  "records": [
+    {
+      "text": "Да, повторный запуск утилиты с тем же `--output` может затереть предыдущие результаты. Это стандартное поведение большинства инструментов, которые используют `>` или перезаписывают файл при каждом запуске.\n\nДавайте посмотрим код утилиты и тестов для подтверждения:\nДа, повторный запуск с тем же `--output` **не затеряет** результаты — он **всегда завершается с ошибкой**, потому что существующие файлы не перезаписываются.\n\nПодтверждение кодом:\n\n1. В строке 106–107 `assistant_check.py`:\n   ```python\n   with (args.output / f\"q{number}.jsonl\").open(\"x\") as out, \\\n           (args.output / f\"q{number}.stderr.txt\").open(\"x\") as err:\n   ```\n   Режим открытия `\"x\"` означает **exclusive creation** — файл создаётся только если не существует.\n\n2. В строке 91–92 `assistant_check.py`:\n   ```python\n   args.output.mkdir(parents=True, exist_ok=False)\n   ```\n   Каталог результата создаётся только если его нет.\n\n3. В тесте `test_assistant_check.py` (строки 45–56):\n   ```python\n   def test_existing_results_are_never_overwritten(self):\n       ...\n       self.assertIn(\"FileExistsError\", result.stderr)\n       self.assertEqual(marker.read_text(), \"original\")\n   ```\n   Тест проверяет, что повторный запуск возвращает `returncode != 0`, содержит ошибку `FileExistsError` и **не меняет** содержимое файла.\n\nИтоговый вывод: повторный запуск с тем же `--output` не перезаписывает предыдущие результаты, а завершается ошибкой `FileExistsError`.",
+      "session_ids": [
+        "ses_eee78f821ffes7m3KW4zjOjrPA"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Может ли повторный запуск утилиты с тем же --output затереть предыдущие результаты? Подтверди кодом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 58.996,
+      "technical_pass": true
+    },
+    {
+      "text": "Утилита обнаруживает пустой видимый ответ и отличает техническую успешность от правильности по смыслу следующим образом:\n\n**Обнаружение пустого видимого ответа:**\nФункция `summarize` собирает только события типа `\"text\"` (строки 29-31, 35-40). Логическое выражение строки 36: `texts = [e[\"part\"][\"text\"] for e in events if e.get(\"type\") == \"text\"]`. Это означает, что все события с типом `\"reasoning\"` (внутренние рассуждения) не включаются в видимый ответ.\n\n**Отличание технической успешности от правильности по смыслу:**\nЛогическое выражение строки 122-126:\n```python\nrecord[\"technical_pass\"] = bool(\n    code == 0 and record[\"text\"] and not record[\"errors\"]\n    and record[\"allowed_tools_only\"] and record.get(\"last_finish\") == \"stop\"\n    and len(record.get(\"session_ids\", [])) == 1\n)\n```\n\nТехническая успешность (`technical_pass`) требует:\n1. Возвратный код `0` (команда завершилась без ошибок терминала)\n2. Непустой видимый ответ (`record[\"text\"]`) — **ключевой момент**\n3. Отсутствие ошибок в событиях типа `\"error\"`\n4. Использование только разрешённых инструментов (`read`, `glob`, `grep`)\n5. Завершение с причиной `\"stop\"`\n6. Один уникальный сеанс\n\nВажно: функция `summarize` **никогда не оценивает фактическую правильность** по смыслу (строка 29), а только проверяет транспортную видимость, политики инструментов и технические условия завершения.",
+      "session_ids": [
+        "ses_eee7811b2ffe3kmXrBsI3fM5IG"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как утилита обнаруживает пустой видимый ответ и отличает техническую успешность от правильности по смыслу?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 52.996,
+      "technical_pass": true
+    },
+    {
+      "text": "Я проверю файлы, чтобы найти информацию о реализации автоматической повторной попытки запроса.\n**Ответ:** В прочитанных файлах **нет реализации автоматической повторной попытки запроса после тайм-аута**.\n\n**Доказательство из кода:**\n1. `assistant_check.py:112-114` — обработка тайм-аута:\n   ```python\n   except subprocess.TimeoutExpired:\n       timed_out, code = True, None\n   ```\n   После тайм-аута код просто помечает `timed_out = True`, но **не реализует повторный запрос**.\n\n2. Файлы содержат только механизм проверки и логирования результатов (`digest_files`, `summarize`, `prepare_snapshot`), но не логику автоматической перезапы для внешних запросов.\n\n**Предпосылка вопроса:**  \nВопрос о «автоматической повторной попытке после тайм-аута» **не имеет подтверждения** в этих файлах. Это поведение либо:\n- Реализовано во внешнем сервисе (не в этих файлах),\n- Не реализовано вообще,\n- Или требуется добавить отдельно.\n\nЕсли нужно реализовать retry-логику — её нет в текущем коде.",
+      "session_ids": [
+        "ses_eee77429bffeQ5YzrVlhYt5mKC"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Где реализована автоматическая повторная попытка запроса после тайм-аута? Проверь предпосылку вопроса.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 40.555,
+      "technical_pass": true
+    },
+    {
+      "text": "Для начала прочитаю файлы, которые вы указали, чтобы найти информацию об SLA.\nВ прочитанных файлах `assistant_check.py` и `test_assistant_check.py` **нет информации об SLA времени ответа** для production-развёртывания. Эти файлы являются инструментами проверки (harness), а не частью самого учебного проекта, о котором спрашивается.\n\nПоскольку в исследуемом проекте только два файла (`assistant_check.py`, `test_assistant_check.py`) и в них отсутствует упоминание SLA, **утверждённого SLA времени ответа для production-развёртывания в этом проекте не установлено**.",
+      "session_ids": [
+        "ses_eee76a596ffeYmBHYKwMQhGf86"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Какой утверждённый SLA времени ответа установлен для production-развёртывания этого проекта? Если данных нет, скажи об этом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 24.047,
+      "technical_pass": true
+    },
+    {
+      "text": "**Исключение передачи эталонов модели:**\n\n1. **Файлы исключаются из каталога проекта** — в функции `prepare_snapshot` (строка 46-58):\n   - В временную директорию копируются только `assistant_check.py`, `test_assistant_check.py` и `opencode.json`.\n   - Ответные эталоны/ключи не копируются.\n   - Файлы ответов явно исключены в документации (строка 47-48).\n\n2. **Ограничение прав доступа** — в `opencode.json`:\n   - Доступ разрешён только на чтение: `\"permissions\": {\"*\": \"deny\", \"read\": \"allow\", ...}` (строка 39 теста).\n\n**Проверка, что вопросы заданы в разных сессиях:**\n\n1. **Уникальные sessionID для каждого вопроса** — в строке 130-134:\n   ```python\n   \"unique_sessions\": len(ids) == len(set(ids)) == len(questions)\n   ```\n   Это гарантирует, что каждый вопрос обрабатывается в отдельной сессии.\n\n2. **Технический проход требует единственную сессию** — строка 122-126:\n   ```python\n   \"technical_pass\": bool(\n       ... and len(record.get(\"session_ids\", [])) == 1\n   )\n   ```\n\n**Итог:**  \nЭталонные ответы исключаются путём явного копирования только исходников и ограничения прав доступа. Уникальность сессий проверяется через `unique_sessions` в отчёте и требование единственного sessionID для каждого вопроса.",
+      "session_ids": [
+        "ses_eee7647a1ffefJNkIiCbvUdHkm"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как исключается передача эталонов тестируемой модели и проверяется, что вопросы заданы в разных сессиях?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 32.846,
+      "technical_pass": true
+    }
+  ]
+}

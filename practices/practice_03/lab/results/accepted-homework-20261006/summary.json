@@ -1,0 +1,110 @@
+{
+  "suite": "homework",
+  "source_sha256": {
+    "assistant_check.py": "ceaecdca6e85315b073edfa7c81f2b88a06b1c69ad50c102d08bf76199f57a26",
+    "opencode.json": "c792e1ed63d743af998a61556d533d1a70fc4ee7f7ab9d5615a799fdf5b011d4",
+    "test_assistant_check.py": "362abaaea59ad9848907711ea20662621b4442f3976497e6aa9995bf7d438a4a"
+  },
+  "snapshot_unchanged": true,
+  "unique_sessions": true,
+  "records": [
+    {
+      "text": "Да, повторный запуск с тем же `-output` никогда не затерт предыдущие результаты — `opencode run` сразу выкинет `FileExistsError`, если файл результата уже существует:\n**Нет**, повторный запуск утилиты с тем же `--output` **не может затереть** предыдущие результаты:\n\n**1. Код** (`assistant_check.py`, строки 106–107):\n```python\nwith (args.output / f\"q{number}.jsonl\").open(\"x\") as out, \\\n        (args.output / f\"q{number}.stderr.txt\").open(\"x\") as err:\n```\nРежим `\"x\"` открывает файл **только на запись** (exclusive), и сразу выдает `FileNotFoundError`, если файл **already exists**.\n\n**2. Тест** (`test_assistant_check.py`, строки 45–56):\n```python\ndef test_existing_results_are_never_overwritten(self):\n    ...\n    marker.write_text(\"original\")\n    result = subprocess.run(...)\n    self.assertNotEqual(result.returncode, 0)\n    self.assertIn(\"FileExistsError\", result.stderr)\n    self.assertEqual(marker.read_text(), \"original\")\n```",
+      "session_ids": [
+        "ses_eee7fe055ffe00JSfaAiIPnCrG"
+      ],
+      "tools": [
+        "read",
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Может ли повторный запуск утилиты с тем же --output затереть предыдущие результаты? Подтверди кодом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 35.777,
+      "technical_pass": true
+    },
+    {
+      "text": "Проверю файлы, которые указаны для исследования.\nВот ответ, основанный на коде утилиты:\n\n**Как утилита обнаруживает пустой видимый ответ:**\n\nВ файле `assistant_check.py`, строки 28–33:\n- Функция `summarize()` собирает видимый ответ только из событий с `type == \"text\"` (строка 30).\n- Вспомогательные события (`reasoning`, `step_finish`) не считаются видимым ответом (проверяется в тесте `test_reasoning_is_not_a_visible_answer`).\n\n**Как отличает техническую успешность от правильности по смыслу:**\n\nВ файле `assistant_check.py`, строки 122–126:\n```python\nrecord[\"technical_pass\"] = bool(\n    code == 0 and record[\"text\"] and not record[\"errors\"]\n    and record[\"allowed_tools_only\"] and record.get(\"last_finish\") == \"stop\"\n    and len(record.get(\"session_ids\", [])) == 1\n)\n```\n\nУсловие `technical_pass` проверяет:\n1. `code == 0` — отсутствие ошибок запуска;\n2. `record[\"text\"]` — наличие видимого текста;\n3. `not record[\"errors\"]` — отсутствие ошибок;\n4. `record[\"allowed_tools_only\"]` — использование только разрешённых инструментов;\n5. `record.get(\"last_finish\") == \"stop\"` — корректное завершение;\n6. `len(record.get(\"session_ids\", [])) == 1` — один сеанс.\n\n**Важно:** Правильность по смыслу (контент ответа) **не проверяется** утилитой — это задача человека или внешних тестов.",
+      "session_ids": [
+        "ses_eee7f5492ffeulAC9FN9gNazTn"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как утилита обнаруживает пустой видимый ответ и отличает техническую успешность от правильности по смыслу?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 34.187,
+      "technical_pass": true
+    },
+    {
+      "text": "В исследуемом проекте не реализована автоматическая повторная попытка запроса после тайм-аута.\n\n**Доказательства:**\n\nФайл `/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/itmo-local-check-od_lgwy_/assistant_check.py` строки 104-113:\n```python\ntimed_out = False\n# Direct file capture preserves partial output even on timeout.\nwith (args.output / f\"q{number}.jsonl\").open(\"x\") as out, \\\n        (args.output / f\"q{number}.stderr.txt\").open(\"x\") as err:\n    try:\n        result = subprocess.run(command, env=env, cwd=target, stdout=out,\n                                stderr=err, timeout=args.timeout, check=False)\n        code = result.returncode\n    except subprocess.TimeoutExpired:\n        timed_out, code = True, None\n```\n\n- При таймауте вызывается `subprocess.TimeoutExpired`, код устанавливается в `None`, переменная `timed_out` становится `True`, но **не происходит повторного запуска** команды.\n- Нет реализации `retry` или цикла повторных попыток.",
+      "session_ids": [
+        "ses_eee7ecef6ffeFgRgyvFrY2E9sn"
+      ],
+      "tools": [
+        "glob",
+        "read",
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Где реализована автоматическая повторная попытка запроса после тайм-аута? Проверь предпосылку вопроса.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 37.333,
+      "technical_pass": true
+    },
+    {
+      "text": "Я прочитаю доступные файлы для анализа проекта.\nИз прочитанных файлов **assistant_check.py** и **test_assistant_check.py** в исследуемом проекте **нет сведений об утверждённом SLA времени ответа для production-развёртывания**.\n\nЭти файлы являются инструментом проверки (`assistant_check`) и содержат логику работы вспомогательной системы OpenCode, но не содержат бизнес-логики или конфигурации целевого проекта.",
+      "session_ids": [
+        "ses_eee7e3cb8ffe20H6yvH96e79iJ"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Какой утверждённый SLA времени ответа установлен для production-развёртывания этого проекта? Если данных нет, скажи об этом.",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 20.902,
+      "technical_pass": true
+    },
+    {
+      "text": "Отв",
+      "session_ids": [
+        "ses_eee7deb8affeKQLrI4yLBcNwWe"
+      ],
+      "tools": [
+        "read",
+        "read"
+      ],
+      "tool_errors": [],
+      "errors": [],
+      "last_finish": "stop",
+      "allowed_tools_only": true,
+      "question": "Как исключается передача эталонов тестируемой модели и проверяется, что вопросы заданы в разных сессиях?",
+      "returncode": 0,
+      "timeout": false,
+      "wall_seconds": 16.038,
+      "technical_pass": true
+    }
+  ]
+}

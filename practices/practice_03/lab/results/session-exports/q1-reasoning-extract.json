@@ -1,0 +1,27 @@
+{
+  "sessionID": "ses_f286e02daffeJW1WNeVpWM1V2g",
+  "title": "Запуск тестов и указание исходного файла",
+  "agent": "local-guide",
+  "model": {
+    "id": "itmo-agent",
+    "providerID": "ollama",
+    "variant": "default"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "part_type": "text",
+      "content": "\"Как запустить тесты? Укажи файл-источник.\""
+    },
+    {
+      "role": "assistant",
+      "part_type": "reasoning",
+      "content": "Требовано найти информацию о запуске тестов. Нужно прочитать структуру проекта и поискать файлы, связанные с запусками тестов. Поскольку это проект на практике 03 (lab/demo), скорее всего там есть конвенции в README или файлах .gitignore, а также примеры запуска тестов. Начну с поиска файлов-конфигураций."
+    },
+    {
+      "role": "assistant",
+      "part_type": "reasoning",
+      "content": "Файл содержит информацию о том, как запустить тесты, и также является источником этой информации. Нужно ответить на основе этого файла.\n\n**Ответ:**\nЗапустить тесты командой: **`make test`**.\n\nИсточник: файл `/Users/avsimp/itmo/ai_tools/ITMOv2/practices/practice_03/lab/demo/README.md`, строка 6."
+    }
+  ]
+}
