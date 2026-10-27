@@ -42,6 +42,8 @@ async def create_pdf(topic_ids: list[int], output_path: str) -> dict:
 
     Абсолютный путь .pdf. Только 1), 2), условия и рисунки, без заголовков и ответов.
     Ответы и источники сохраняются отдельно. Существующие файлы не перезаписываются.
+    С приложениями дополнительно создаётся ZIP: PDF и папка файлов по номерам пунктов.
+    result_file — итоговый ZIP либо PDF; archive — путь ZIP либо null. pdf — для просмотра.
     """
     return await asyncio.to_thread(export_pdf, bank, topic_ids, output_path)
 

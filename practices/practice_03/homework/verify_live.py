@@ -6,6 +6,8 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import unquote
+from zipfile import ZipFile
 
 import pymupdf
 from mcp import ClientSession, StdioServerParameters
@@ -46,11 +48,41 @@ async def main():
             pdf_path = output / "подборка.pdf"
             result = await call("create_pdf", {"topic_ids": [9048, 9080, 9175], "output_path": str(pdf_path)})
             assert result["answers"] == "1. 13\n2. 8\n3. 19) 41; 20) 36 40; 21) 35"
+            assert result["result_file"] == result["pdf"] == str(pdf_path)
+            assert result["archive"] is None and result["attachments"] == []
+            assert not pdf_path.with_suffix(".zip").exists()
+            assert not pdf_path.with_suffix(".files").exists()
             await call("create_pdf", {"topic_ids": [9048], "output_path": str(pdf_path)}, error=True)
             attached = await call("create_pdf", {"topic_ids": [9111], "output_path": str(output / "таблица.pdf")})
-            assert len(attached["attachments"]) == 1
+            assert attached["attachments"] == ["1.ods"]
+            archive_path = output / "таблица.zip"
+            assert attached["result_file"] == attached["archive"] == str(archive_path)
             attachment = output / "таблица.files" / attached["attachments"][0]
             assert attachment.read_bytes().startswith(b"PK"), "ODS должен быть ZIP-контейнером"
+            with ZipFile(archive_path) as archive:
+                assert archive.namelist() == ["таблица.pdf", "таблица.files/1.ods"]
+                assert archive.read("таблица.pdf") == Path(attached["pdf"]).read_bytes()
+                assert archive.read("таблица.files/1.ods") == attachment.read_bytes()
+                extracted = output / "распаковано"
+                archive.extractall(extracted)
+            with pymupdf.open(extracted / "таблица.pdf") as pdf:
+                links = [link for page in pdf for link in page.get_links()]
+                assert links and {unquote(link["file"]) for link in links} == {"таблица.files/1.ods"}
+                assert all(not Path(unquote(link["file"])).is_absolute() and "uri" not in link for link in links)
+                assert "1.ods" in "".join(page.get_text() for page in pdf)
+                for link in links:
+                    assert (extracted / unquote(link["file"])).read_bytes() == attachment.read_bytes()
+                for index, page in enumerate(pdf):
+                    page.get_pixmap(matrix=pymupdf.Matrix(1.2, 1.2)).save(output / f"attachment-page-{index + 1}.png")
+            before = archive_path.read_bytes()
+            await call("create_pdf", {"topic_ids": [9111], "output_path": attached["pdf"]}, error=True)
+            assert archive_path.read_bytes() == before
+            conflict = output / "конфликт.zip"
+            conflict.write_bytes(b"existing ZIP placeholder")
+            await call("create_pdf", {"topic_ids": [9080], "output_path": str(conflict.with_suffix(".pdf"))}, error=True)
+            assert conflict.read_bytes() == b"existing ZIP placeholder"
+            assert not conflict.with_suffix(".pdf").exists()
+            print(f"ZIP: {archive_path}, состав и ссылки после распаковки проверены")
     with pymupdf.open(pdf_path) as pdf:
         text = "\n".join(p.get_text() for p in pdf)
         assert all(re.search(rf"\b{n}\)", text) for n in (1, 2, 3))
