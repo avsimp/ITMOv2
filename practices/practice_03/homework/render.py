@@ -6,12 +6,19 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
+from zipfile import ZIP_DEFLATED, ZipFile
 
+import pymupdf
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 
 from polyakov import SourceError
+
+
+class OutputConflictError(SourceError):
+    """Existing output must not be overwritten; compatible with SourceError callers."""
+
 
 CSS = """
 @page { size: A4; margin: 18mm; }
@@ -42,6 +49,44 @@ def answer_line(number, task):
     return f"{number}. {answer}"
 
 
+def plan_attachments(soup, number, task_id, assets_name):
+    """Имена по позиции пункта; повтор URL внутри пункта — одно приложение."""
+    urls = list(dict.fromkeys(link["href"] for link in soup.select("a[href]")))
+    plan = []
+    for index, url in enumerate(urls, 1):
+        original = unquote(urlsplit(url).path.rsplit("/", 1)[-1])
+        extension = "".join(Path(original).suffixes)
+        stem = str(number) if len(urls) == 1 else f"{number}_{index}"
+        filename = stem + extension
+        plan.append({"task_number": number, "task_id": task_id, "source_url": url,
+                     "original_filename": original, "filename": filename,
+                     "relative_path": assets_name + "/" + filename})
+    return plan
+
+
+def normalize_pdf_links(pdf, markers):
+    """Сохраняем геометрию ссылок Chromium, делая файловые назначения переносимыми."""
+    found = set()
+    with pymupdf.open(stream=pdf, filetype="pdf") as document:
+        for page in document:
+            for link in page.get_links():
+                marker = link.get("uri")
+                if marker in markers:
+                    link["kind"] = pymupdf.LINK_LAUNCH
+                    link["file"] = markers[marker]
+                    del link["uri"]
+                    page.update_link(link)
+                    found.add(marker)
+        if found != set(markers):
+            raise SourceError("В PDF потеряны ссылки на приложения; экспорт не создан")
+        return document.tobytes(garbage=4, deflate=True)
+
+
+def write_new(path, data):
+    with path.open("xb") as output:
+        output.write(data)
+
+
 def export_pdf(bank, topic_ids, output_path):
     if not topic_ids or len(topic_ids) > 100 or len(set(topic_ids)) != len(topic_ids):
         raise SourceError("Нужно от 1 до 100 уникальных ID; одна тройка 19–21 — один ID")
@@ -51,12 +96,15 @@ def export_pdf(bank, topic_ids, output_path):
     manifest_path = path.with_suffix(".sources.json")
     answers_path = path.with_suffix(".answers.txt")
     assets_path = path.with_suffix(".files")
-    if any(p.exists() for p in (path, manifest_path, answers_path, assets_path)):
-        raise SourceError("Файл или сопутствующие материалы уже существуют; выберите новое имя")
+    archive_path = path.with_suffix(".zip")
+    if any(p.exists() or p.is_symlink() for p in (path, manifest_path, answers_path, assets_path, archive_path)):
+        raise OutputConflictError("Файл или сопутствующие материалы уже существуют; выберите новое имя")
     tasks = [bank.get(ident) for ident in topic_ids]
     answers = "\n".join(answer_line(i, task) for i, task in enumerate(tasks, 1))
     sections = []
     attachments = {}
+    attachment_map = []
+    link_markers = {}
     for number, task in enumerate(tasks, 1):
         soup = BeautifulSoup(task["statement_html"], "html.parser")
         for img in soup.select("img[src]"):
@@ -66,13 +114,26 @@ def export_pdf(bank, topic_ids, output_path):
                 raise SourceError(f"Не удалось получить изображение {img['src']}")
             encoded = base64.b64encode(response.content).decode()
             img["src"] = f"data:{mime};base64,{encoded}"
-        for link in soup.select("a[href]"):
-            url = link["href"]
-            response = bank.fetch(url)
-            filename = Path(urlsplit(url).path).name
-            filename = f"{task['id']}-{hashlib.sha256(url.encode()).hexdigest()[:8]}-{filename}"
-            attachments[filename] = response.content
-            link["href"] = assets_path.name + "/" + filename
+        plan = plan_attachments(soup, number, task["id"], assets_path.name)
+        attachment_map.extend(plan)
+        by_url = {entry["source_url"]: entry for entry in plan}
+        for entry in plan:
+            attachments[entry["filename"]] = bank.fetch(entry["source_url"]).content
+        for link_index, link in enumerate(soup.select("a[href]"), 1):
+            entry = by_url[link["href"]]
+            if link.get_text() == entry["original_filename"]:
+                # Меняем текстовые узлы, сохраняя оформляющие теги внутри ссылки.
+                nodes = list(link.find_all(string=True))
+                remaining = entry["filename"]
+                for index, node in enumerate(nodes):
+                    text = remaining if index == len(nodes) - 1 else remaining[:len(node)]
+                    remaining = remaining[len(node):]
+                    node.replace_with(text)
+                if not nodes:
+                    link.append(remaining)
+            marker = f"https://homework.invalid/{number}/{link_index}"
+            link_markers[marker] = entry["relative_path"]
+            link["href"] = marker
         sections.append(f'<div class="task"><span class="number">{number})</span>{soup}</div>')
     html = '<!doctype html><html lang="ru"><meta charset="utf-8"><style>' + CSS + '</style><body>' + "".join(sections) + '</body></html>'
     with sync_playwright() as pw:
@@ -87,17 +148,28 @@ def export_pdf(bank, topic_ids, output_path):
             pdf = page.pdf(format="A4", display_header_footer=False, prefer_css_page_size=True)
         finally:
             browser.close()
+    if link_markers:
+        pdf = normalize_pdf_links(pdf, link_markers)
     manifest = {"created_at": datetime.now(timezone.utc).isoformat(),
                 "format_version": 1, "tasks": tasks,
                 "pdf_sha256": hashlib.sha256(pdf).hexdigest(),
-                "attachments": list(attachments)}
+                "attachments": list(attachments), "attachment_map": attachment_map}
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(pdf)
-    answers_path.write_text(answers + "\n", encoding="utf-8")
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if attachments:
-        assets_path.mkdir()
-        for filename, data in attachments.items():
-            (assets_path / filename).write_bytes(data)
+    try:
+        write_new(path, pdf)
+        write_new(answers_path, (answers + "\n").encode("utf-8"))
+        write_new(manifest_path, (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+        if attachments:
+            assets_path.mkdir()
+            for filename, data in attachments.items():
+                write_new(assets_path / filename, data)
+            with ZipFile(archive_path, "x", compression=ZIP_DEFLATED) as archive:
+                archive.writestr(path.name, pdf)
+                for filename, data in attachments.items():
+                    archive.writestr(assets_path.name + "/" + filename, data)
+    except FileExistsError as exc:
+        raise OutputConflictError("Файл или сопутствующие материалы уже существуют; выберите новое имя") from exc
     return {"pdf": str(path), "sources": str(manifest_path), "answers_file": str(answers_path),
-            "answers": answers, "count": len(tasks), "attachments": list(attachments)}
+            "answers": answers, "count": len(tasks), "attachments": list(attachments),
+            "result_file": str(archive_path if attachments else path),
+            "archive": str(archive_path) if attachments else None}

@@ -1,0 +1,835 @@
+openapi: 3.1.0
+info:
+  title: Локальный подборщик задач — HTTP API
+  version: 1.0.0
+  summary: Единственный согласованный контракт UI/API для ДЗ 5.
+  description: |
+    FastAPI обслуживает UI и API на одном origin, только 127.0.0.1.
+    Запросы API используют префикс /api/v1. Авторизация не требуется.
+    Схемы и примеры описывают будущее поведение, а не работающую реализацию.
+    Категории, поиск и экспорт переиспользуют Bank/export_pdf; MCP не изменяется.
+
+    Все выдаваемые delivery/download URL — абсолютные HTTP(S)-URL того же origin,
+    сформированные из настроенного origin приложения, а не произвольного Host клиента.
+    UI использует выданные URL без конструирования файловых путей. Порт по умолчанию 8000.
+    Адреса source_url/listing_url — происхождение данных на сайте Полякова, не локальные пути.
+
+    Создание — один длительный POST без фонового задания, прогресса и отмены.
+    Каждый POST создаёт новую работу, даже с теми же ID и именем. Идемпотентность
+    и поиск потерянной работы не предоставляются. После потери связи исход неизвестен;
+    автоматический повтор POST запрещён. Новое создание возможно явным действием
+    после предупреждения, что предыдущая работа могла быть создана.
+    UI отправляет POST на точный /api/v1/works с запретом следования redirect.
+    API обслуживает этот адрес напрямую, без 307/308. POST /api/v1/works/
+    возвращает 404 ErrorResponse без Location, перенаправления и запуска экспорта.
+
+    Готовые материалы и метаданные сохраняются между перезапусками до ручной очистки.
+    GET готовых материалов не вызывает повторный экспорт или обращение к источнику.
+    Нет списка истории, удаления через API, базы данных или очереди заданий.
+    JSON и ошибки не содержат локальных абсолютных путей, трассировок или ответов задач,
+    кроме специально скачиваемых преподавательских answers/sources.
+
+    Неизвестные query/body поля и неверные типы отклоняются (422).
+    Дубли скалярных query-параметров отклоняются; массивы передаются повтором ключа.
+    Неверный JSON — 400, другой Content-Type у POST — 415, неподдержанный метод — 405.
+    Прикладные ошибки API имеют JSON ErrorResponse. Единственные описанные здесь
+    исключения — транспортные ошибки обработки Range у FileResponse Starlette 1.10.0:
+    400 text/plain при некорректном Range и 416 text/plain с пустым телом при
+    недостижимом диапазоне. Они относятся только к файловому GET после разрешения
+    готового артефакта; остальные ошибки, в том числе неверный JSON POST и 404 файла,
+    остаются JSON ErrorResponse. Обычное скачивание UI не посылает Range;
+    прямой просмотр PDF допускает Range. После отправки заголовков обрыв передачи
+    не может быть заменён JSON-ошибкой; повтор GET не создаёт новую работу.
+servers:
+  - url: http://127.0.0.1:8000
+    description: Локальный origin по умолчанию; при смене порта UI и API используют один origin.
+security: []
+tags:
+  - name: Bank
+    description: Категории, поиск и ресурсы оригинальных условий без ответов.
+  - name: Works
+    description: Создание и метаданные готовых работ.
+  - name: Files
+    description: Неизменяемые материалы готовой работы.
+x-contract-status: agreed
+x-file-response-baseline:
+  fastapi: 0.162.0
+  starlette: 1.10.0
+x-error-policy-scope: Прикладные JSON-ошибки; транспортные 400/416 Range файлового GET исключены.
+x-error-policy:
+  invalid_request: [400, 405, 415]
+  validation_error: [422]
+  not_found: [404]
+  output_conflict: [409]
+  source_error: [502]
+  source_timeout: [504]
+  export_failed: [500]
+  internal_error: [500]
+paths:
+  /api/v1/categories:
+    get:
+      tags: [Bank]
+      operationId: listCategories
+      summary: Получить категории номера ЕГЭ.
+      description: |
+        Использует Bank.categories. Для 19, 20 и 21 возвращается общий набор.
+        requested_ege_number отражает запрос, ege_number — канонический номер (19 для тройки).
+      parameters:
+        - $ref: '#/components/parameters/EgeNumber'
+      responses:
+        '200':
+          description: Актуальный набор категорий источника.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResult'
+              example:
+                requested_ege_number: 20
+                ege_number: 19
+                categories:
+                  - {id: 163, title: Одна куча}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '502': {$ref: '#/components/responses/SourceError'}
+        '504': {$ref: '#/components/responses/SourceTimeout'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        default: {$ref: '#/components/responses/ProtocolError'}
+  /api/v1/tasks:
+    get:
+      tags: [Bank]
+      operationId: searchTasks
+      summary: Искать оригинальные условия без ответов с пагинацией.
+      description: |
+        Использует Bank.search; сохраняет порядок источника. Фильтры и исключения
+        применяются до пагинации. contains — регистронезависимая подстрока, не сложность.
+        Массивы: ?category_ids=12&category_ids=13&exclude_ids=9048.
+        Отсутствие category_ids означает все категории; пустое значение или чужая
+        категория — 422. Отсутствие exclude_ids означает пустой список исключений.
+        Повторяющиеся значения внутри массивов категорий/исключений имеют семантику множества.
+        Нет гарантии единого снимка банка между запросами.
+        next_offset=null означает конец. Предыдущую позицию UI хранит по истории смещений.
+        Ответы не включаются. statement_html — отдельное браузерное представление;
+        исходные нормализованные HTML и URL сохраняются в sources при экспорте.
+      parameters:
+        - $ref: '#/components/parameters/EgeNumber'
+        - name: category_ids
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            minItems: 1
+            items: {$ref: '#/components/schemas/PositiveId'}
+          description: Необязательный набор категорий выбранного номера; отсутствие — все.
+        - name: exclude_ids
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            minItems: 1
+            items: {$ref: '#/components/schemas/PositiveId'}
+          description: Необязательный набор ID для исключения.
+        - name: contains
+          in: query
+          schema: {type: string, default: ''}
+          description: Подстрока в текстовом условии.
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, default: 0}
+          description: Смещение в отфильтрованном списке.
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 30, default: 10}
+          description: Максимальное число записей на странице, игра — одна запись.
+      responses:
+        '200':
+          description: Страница задач, включая нормальную пустую страницу.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SearchResult'}
+              examples:
+                page:
+                  $ref: '#/components/examples/SearchPage'
+                empty:
+                  value:
+                    requested_ege_number: 5
+                    ege_number: 5
+                    total: 0
+                    offset: 0
+                    limit: 10
+                    next_offset: null
+                    source_url: https://kpolyakov.spb.ru/school/ege/gen.php?action=viewAllEgeNo&egeId=5
+                    tasks: []
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '502': {$ref: '#/components/responses/SourceError'}
+        '504': {$ref: '#/components/responses/SourceTimeout'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        default: {$ref: '#/components/responses/ProtocolError'}
+  /api/v1/tasks/{topic_id}/resources/{kind}:
+    get:
+      tags: [Bank]
+      operationId: getTaskResource
+      summary: Получить изображение или приложение условия через тот же origin.
+      description: |
+        Ресурс привязан к конкретной задаче, это не произвольный URL proxy.
+        Сначала Bank.get(topic_id); url должен точно совпасть с одним из images
+        или attachments этой задачи соответственно kind. Далее Bank.fetch(url).
+        Разрешён только домен kpolyakov.spb.ru по правилам банка, без следования redirect.
+        Неизвестная привязка — 404. Сбой Bank.get/fetch, включая недоказанный неизвестный
+        положительный topic_id, — 502, распознанный upstream timeout — 504.
+
+        image: PNG/JPEG/GIF/WebP/SVG, MIME проверяется; отсутствующий или иной MIME — 502.
+        Изображение возвращается inline; SVG используется только как внешний img,
+        не как вставляемая SVG-разметка. CSP sandbox защищает прямое открытие SVG.
+        attachment: исходные байты application/octet-stream, принудительное скачивание
+        с безопасным именем. Content-Type/Set-Cookie/Location источника не транслируются вслепую.
+        Разбор/сохранение через text не выполняется. Cache-Control: no-store для браузера.
+        URL не является снимком: после изменения источника допустим 404/502, не подмена файла.
+      parameters:
+        - name: topic_id
+          in: path
+          required: true
+          schema: {$ref: '#/components/schemas/PositiveId'}
+        - name: kind
+          in: path
+          required: true
+          schema: {type: string, enum: [image, attachment]}
+        - name: url
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/HttpUrl'}
+          description: Точный исходный URL из условия, percent-encoded как одно query-значение.
+          example: https://kpolyakov.spb.ru/cms/images/42.gif
+      responses:
+        '200':
+          description: Байты ресурса условия, не готового экспорта.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+              description: inline для image, attachment с безопасным filename/filename* для attachment.
+            X-Content-Type-Options:
+              schema: {type: string, const: nosniff}
+            Cache-Control:
+              schema: {type: string, const: no-store}
+            Content-Security-Policy:
+              schema: {type: string}
+              description: Для SVG обязателен sandbox; скрипты и внешние зависимости запрещены.
+          content:
+            image/png:
+              schema: {type: string, format: binary}
+            image/jpeg:
+              schema: {type: string, format: binary}
+            image/gif:
+              schema: {type: string, format: binary}
+            image/webp:
+              schema: {type: string, format: binary}
+            image/svg+xml:
+              schema: {type: string, format: binary}
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '502': {$ref: '#/components/responses/SourceError'}
+        '504': {$ref: '#/components/responses/SourceTimeout'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        default: {$ref: '#/components/responses/ProtocolError'}
+  /api/v1/works:
+    post:
+      tags: [Works]
+      operationId: createWork
+      summary: Создать готовую работу по ID в указанном порядке.
+      description: |
+        Один длительный запрос, успешный ответ только после завершения export_pdf
+        и публикации метаданных. Нет 202, job_id, polling, cancel и idempotency key.
+        name необязателен; отсутствие означает автоматическое имя, null/пустое имя — 422.
+        Каждый запрос получает отдельный UUID work_id и каталог, даже при одинаковом
+        имени и ID. topic_ids не сортируются. Блок 19–21 — один ID и один пункт.
+        Сервер сам задаёт output_path; клиентские пути/условия/ответы не принимаются.
+        Повторённый запрос — новая работа, не восстановление предыдущей.
+        Разрыв связи не отменяет уже начатую операцию в работающем сервере.
+        Точный /api/v1/works обслуживается напрямую, без 307/308 и иной нормализации
+        через redirect. UI запрещает автоматическое следование перенаправлениям POST.
+        POST /api/v1/works/ возвращает 404 ErrorResponse без Location и вызова экспорта.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateWork'}
+            examples:
+              automaticName:
+                value: {topic_ids: [9048, 9080, 9175]}
+              explicitName:
+                value: {name: Домашняя работа, topic_ids: [9175, 9111]}
+      responses:
+        '201':
+          description: Все материалы и метаданные готовы; ссылки ещё не означают успешного скачивания.
+          headers:
+            Location:
+              description: URL метаданных готовой работы.
+              schema: {$ref: '#/components/schemas/HttpUrl'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Work'}
+              examples:
+                pdf:
+                  $ref: '#/components/examples/PdfWork'
+                zip:
+                  $ref: '#/components/examples/ZipWork'
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/OutputConflict'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '502': {$ref: '#/components/responses/SourceError'}
+        '504': {$ref: '#/components/responses/SourceTimeout'}
+        '500': {$ref: '#/components/responses/ExportError'}
+        default: {$ref: '#/components/responses/ProtocolError'}
+  /api/v1/works/{work_id}:
+    get:
+      tags: [Works]
+      operationId: getWork
+      summary: Прочитать метаданные известной готовой работы.
+      description: |
+        Читает сохранённые метаданные, включая после перезапуска. Не создаёт работу,
+        не обращается к источнику, не ищет работы по имени. Незавершённые каталоги — 404.
+        Удаление отдельного артефакта не скрывает метаданные остальных: ссылки
+        остаются прежними, отсутствующий файл даёт 404 при скачивании.
+      parameters:
+        - $ref: '#/components/parameters/WorkId'
+      responses:
+        '200':
+          description: Метаданные известной работы, без ответов и локальных путей.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Work'}
+              examples:
+                zip: {$ref: '#/components/examples/ZipWork'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        default: {$ref: '#/components/responses/ProtocolError'}
+  /api/v1/works/{work_id}/files/{kind}:
+    get:
+      tags: [Files]
+      operationId: downloadWorkFile
+      summary: Получить зарегистрированный материал готовой работы.
+      description: |
+        result — рекомендуемый ученический PDF без приложений либо ZIP с приложениями,
+        Content-Disposition attachment. pdf — тот же PDF отдельно, inline для просмотра;
+        при ZIP один PDF не заменяет комплект. archive — ZIP, либо 404 если его нет.
+        answers — отдельный UTF-8 текст; sources — отдельный JSON формата исходного экспортёра.
+        Каждый kind имеет отдельный URL. Файлы не генерируются повторно и выдаются
+        теми же байтами; источники читаются как сохранённый файл, не пересобираются.
+        answers/sources имеют attachment, в ученическом PDF/ZIP их нет.
+        Нельзя указать произвольный путь, имя файла или перечислить каталог.
+        Ошибка одного материала не блокирует другие материалы этой работы.
+        Обычный Fetch GET UI не посылает Range; прямой просмотр PDF сохранён.
+        В Starlette 1.10.0 применимый Range даёт 206, некорректный Range — транспортный
+        400 text/plain, недостижимый диапазон — 416 text/plain с пустым телом.
+        Эти 400/416 не имеют ErrorResponse и возникают только внутри файловой передачи.
+        Прикладные ошибки проверки work_id/kind и отсутствующего файла возвращаются
+        до FileResponse как JSON ErrorResponse, даже при наличии некорректного Range.
+        Несовпавший If-Range либо более 100 диапазонов приводят к полной выдаче 200.
+        Обрыв начатой передачи не заменяется JSON; явный повтор GET не вызывает экспорт.
+      parameters:
+        - $ref: '#/components/parameters/WorkId'
+        - name: kind
+          in: path
+          required: true
+          schema: {type: string, enum: [result, pdf, archive, answers, sources]}
+        - name: Range
+          in: header
+          schema: {type: string}
+          description: |
+            Необязательный транспортный заголовок прямого просмотра, например bytes=0-1023.
+            Передаётся FileResponse без предварительной подмены malformed Range на 422.
+            Обычное скачивание UI его не отправляет.
+        - name: If-Range
+          in: header
+          schema: {type: string}
+          description: Совпавший сильный ETag или Last-Modified допускает Range, иначе полный 200.
+      responses:
+        '200':
+          description: Полный сохранённый файл запрошенного вида.
+          headers:
+            Content-Disposition:
+              schema: {type: string}
+              description: inline для pdf; attachment для остальных, filename и UTF-8 filename*.
+              example: attachment; filename="work.zip"
+            Content-Length:
+              schema: {type: integer, minimum: 0}
+            X-Content-Type-Options:
+              schema: {type: string, const: nosniff}
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/pdf:
+              schema: {type: string, format: binary}
+            application/zip:
+              schema: {type: string, format: binary}
+            text/plain; charset=utf-8:
+              schema: {type: string}
+              example: |
+                1. 19) 41; 20) 36 40; 21) 35
+                2. 22
+            application/json:
+              schema: {$ref: '#/components/schemas/SourcesManifest'}
+              examples:
+                sources: {$ref: '#/components/examples/Sources'}
+        '206':
+          description: |
+            Один диапазон — MIME файла и обязательный Content-Range в заголовке ответа.
+            Несколько непересекающихся диапазонов — multipart/byteranges с boundary,
+            Content-Range внутри каждой части, без общего Content-Range.
+            Content-Disposition сохраняет назначение исходного файла.
+          headers:
+            Content-Range:
+              schema: {type: string}
+              example: bytes 0-1023/2048
+          content:
+            application/pdf:
+              schema: {type: string, format: binary}
+            application/zip:
+              schema: {type: string, format: binary}
+            text/plain; charset=utf-8:
+              schema: {type: string, format: binary}
+            application/json:
+              schema: {type: string, format: binary}
+            multipart/byteranges:
+              schema: {type: string, format: binary}
+        '400':
+          description: |
+            Только транспортная ошибка разбора Range в FileResponse Starlette 1.10.0,
+            не JSON ErrorResponse. Примеры причин — items=0-3, bytes=, обратные границы.
+            Этот ответ не изменяет JSON-формат прикладных ошибок API и неверного JSON POST.
+          content:
+            text/plain; charset=utf-8:
+              schema: {type: string}
+              examples:
+                unsupportedUnit:
+                  value: Only support bytes range
+                emptyRange:
+                  value: 'Range header: range must be requested'
+        '416':
+          description: |
+            Недостижимый Range; транспортный PlainTextResponse Starlette 1.10.0,
+            не ErrorResponse. Тело пустое, Content-Type text/plain; charset=utf-8,
+            Content-Range bytes */N с фактическим размером файла.
+          headers:
+            Content-Range:
+              schema: {type: string}
+              example: bytes */2048
+          content:
+            text/plain; charset=utf-8:
+              schema: {type: string, const: ''}
+              example: ''
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/ValidationError'}
+        '500': {$ref: '#/components/responses/InternalError'}
+        default: {$ref: '#/components/responses/ProtocolError'}
+components:
+  parameters:
+    EgeNumber:
+      name: ege_number
+      in: query
+      required: true
+      schema: {type: integer, minimum: 1, maximum: 27}
+      description: Обязательный номер ЕГЭ, 20 и 21 нормализуются в 19.
+      example: 5
+    WorkId:
+      name: work_id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+      description: Непрозрачный UUID, известный из успешного ответа создания.
+      example: 663a0971-683f-4dba-b5ec-54f43080a001
+  schemas:
+    PositiveId:
+      type: integer
+      minimum: 1
+      description: Положительное целое; в JSON строки, bool и дроби не приводятся к int.
+    HttpUrl:
+      type: string
+      format: uri
+      pattern: '^https?://'
+      description: HTTP(S)-URL, не локальный путь и не file://.
+    Category:
+      type: object
+      additionalProperties: false
+      required: [id, title]
+      properties:
+        id: {$ref: '#/components/schemas/PositiveId'}
+        title: {type: string, minLength: 1}
+    CategoryResult:
+      type: object
+      additionalProperties: false
+      required: [requested_ege_number, ege_number, categories]
+      properties:
+        requested_ege_number: {type: integer, minimum: 1, maximum: 27}
+        ege_number: {type: integer, minimum: 1, maximum: 27}
+        categories:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/Category'}
+    Task:
+      type: object
+      additionalProperties: false
+      required: [id, ege_numbers, statement, statement_html, source_url, listing_url, images, attachments]
+      description: |
+        Только поля для преподавательского выбора условий без ответов.
+        statement_html — браузерная копия с API-ресурсами; исходный объект Bank не изменяется.
+        images/attachments содержат те же delivery URL, что src/href в браузерном HTML;
+        наличие приложений определяется attachments.length > 0. images — внешние img,
+        не встраиваемый SVG DOM. HTML-фрагмент содержит только разрешённые элементы
+        условий; неподдерживаемое содержательное представление даёт source_error.
+      properties:
+        id: {$ref: '#/components/schemas/PositiveId'}
+        ege_numbers:
+          $ref: '#/components/schemas/EgeNumbers'
+        statement: {type: string, minLength: 1}
+        statement_html: {type: string, minLength: 1}
+        source_url: {$ref: '#/components/schemas/HttpUrl'}
+        listing_url: {$ref: '#/components/schemas/HttpUrl'}
+        images:
+          type: array
+          items: {$ref: '#/components/schemas/HttpUrl'}
+        attachments:
+          type: array
+          items: {$ref: '#/components/schemas/HttpUrl'}
+    EgeNumbers:
+      oneOf:
+        - type: array
+          minItems: 1
+          maxItems: 1
+          items: {type: integer, minimum: 1, maximum: 27, not: {enum: [19, 20, 21]}}
+        - const: [19, 20, 21]
+      description: Обычный номер либо полная неделимая тройка.
+    SearchResult:
+      type: object
+      additionalProperties: false
+      required: [requested_ege_number, ege_number, total, offset, limit, next_offset, source_url, tasks]
+      properties:
+        requested_ege_number: {type: integer, minimum: 1, maximum: 27}
+        ege_number: {type: integer, minimum: 1, maximum: 27}
+        total: {type: integer, minimum: 0}
+        offset: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1, maximum: 30}
+        next_offset: {type: [integer, 'null'], minimum: 0}
+        source_url: {$ref: '#/components/schemas/HttpUrl'}
+        tasks:
+          type: array
+          maxItems: 30
+          items: {$ref: '#/components/schemas/Task'}
+    CreateWork:
+      type: object
+      additionalProperties: false
+      required: [topic_ids]
+      properties:
+        topic_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/PositiveId'}
+          description: Порядок элементов — порядок пунктов; один ID игры — один пункт.
+        name:
+          type: string
+          minLength: 1
+          pattern: '^[^/\\\u0000-\u001F\u007F-\u009F]+$'
+          description: |
+            Только при явном имени. После strip — 1–80 Unicode-символов, без управляющих
+            символов, / и обратного слеша; не . или .., не начинается с обозначения диска
+            вида C:. Условия проверяются после strip, ограничения длины относятся к
+            нормализованному имени. null/пустая/пробельная строка недопустимы.
+            Отсутствие поля назначает имя «Работа YYYY-MM-DD HH:mm:ss» (UTC).
+            Имя не используется как путь; внутри каталога фиксированная основа work.
+    Artifact:
+      type: object
+      additionalProperties: false
+      required: [url, filename, media_type, audience]
+      properties:
+        url: {$ref: '#/components/schemas/HttpUrl'}
+        filename: {type: string, minLength: 1}
+        media_type:
+          type: string
+          enum: [application/pdf, application/zip, 'text/plain; charset=utf-8', application/json]
+        audience: {type: string, enum: [student, preview, teacher]}
+    Work:
+      type: object
+      additionalProperties: false
+      required: [work_id, name, created_at, topic_ids, count, attachments, result, pdf, archive, answers, sources]
+      description: |
+        Только готовая работа, без статуса фонового задания. count равен длине topic_ids.
+        result — student, pdf — preview, answers/sources — teacher, archive — student или null.
+        Нет приложений: result.media_type=application/pdf, archive=null.
+        Есть приложения: result.media_type=application/zip, archive не null; result и archive
+        указывают на одни байты по разным URL. pdf всегда один и тот же сохранённый PDF.
+        Ссылки неизменны при том же origin; после ручной очистки файл может дать 404.
+      properties:
+        work_id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 80}
+        created_at: {type: string, format: date-time}
+        topic_ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/PositiveId'}
+        count: {type: integer, minimum: 1, maximum: 100}
+        attachments:
+          type: array
+          items: {type: string, minLength: 1}
+          description: Имена файлов внутри work.files, не исходные локальные пути.
+        result: {$ref: '#/components/schemas/Artifact'}
+        pdf: {$ref: '#/components/schemas/Artifact'}
+        archive:
+          oneOf:
+            - $ref: '#/components/schemas/Artifact'
+            - type: 'null'
+        answers: {$ref: '#/components/schemas/Artifact'}
+        sources: {$ref: '#/components/schemas/Artifact'}
+    OriginalTask:
+      type: object
+      additionalProperties: false
+      required: [id, ege_numbers, source_url, listing_url, statement_html, statement, answer_html, answer, images, attachments]
+      description: Исходный нормализованный объект Bank; только преподавательский sources.
+      properties:
+        id: {$ref: '#/components/schemas/PositiveId'}
+        ege_numbers: {$ref: '#/components/schemas/EgeNumbers'}
+        source_url: {$ref: '#/components/schemas/HttpUrl'}
+        listing_url: {$ref: '#/components/schemas/HttpUrl'}
+        statement_html: {type: string}
+        statement: {type: string}
+        answer_html: {type: string}
+        answer: {type: string}
+        images:
+          type: array
+          items: {$ref: '#/components/schemas/HttpUrl'}
+        attachments:
+          type: array
+          items: {$ref: '#/components/schemas/HttpUrl'}
+    AttachmentMapEntry:
+      type: object
+      additionalProperties: false
+      required: [task_number, task_id, source_url, original_filename, filename, relative_path]
+      properties:
+        task_number: {type: integer, minimum: 1, maximum: 100}
+        task_id: {$ref: '#/components/schemas/PositiveId'}
+        source_url: {$ref: '#/components/schemas/HttpUrl'}
+        original_filename: {type: string}
+        filename: {type: string, minLength: 1}
+        relative_path: {type: string, pattern: '^work\.files/'}
+    SourcesManifest:
+      type: object
+      additionalProperties: false
+      required: [created_at, format_version, tasks, pdf_sha256, attachments, attachment_map]
+      description: Сохранённый JSON export_pdf, скачивается без пересборки; включает исходные ответы.
+      properties:
+        created_at: {type: string, format: date-time}
+        format_version: {type: integer, const: 1}
+        tasks:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: {$ref: '#/components/schemas/OriginalTask'}
+        pdf_sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        attachments:
+          type: array
+          items: {type: string}
+        attachment_map:
+          type: array
+          items: {$ref: '#/components/schemas/AttachmentMapEntry'}
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field: {type: string, minLength: 1}
+        message: {type: string, minLength: 1}
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, fields]
+          properties:
+            code:
+              type: string
+              enum: [invalid_request, validation_error, not_found, output_conflict, source_error, source_timeout, export_failed, internal_error]
+            message: {type: string, minLength: 1}
+            fields:
+              type: array
+              items: {$ref: '#/components/schemas/FieldError'}
+              description: Пустой список вне ошибок полей; не содержит исходного input и локальных путей.
+  responses:
+    BadRequest:
+      description: Невозможно прочитать JSON запроса; invalid_request.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: invalid_request, message: Некорректный JSON запроса, fields: []}}
+    UnsupportedMediaType:
+      description: POST требует application/json; invalid_request.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: invalid_request, message: Требуется application/json, fields: []}}
+    ValidationError:
+      description: Неверные типы/границы/категории/имя, повторы ID либо неизвестные поля; validation_error.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example:
+            error:
+              code: validation_error
+              message: Проверьте параметры запроса
+              fields:
+                - {field: topic_ids, message: Требуется от 1 до 100 уникальных положительных целых ID}
+    NotFound:
+      description: Работа не готова/неизвестна, материал удалён/не создан либо ресурс не принадлежит задаче.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: not_found, message: Материал работы отсутствует или удалён, fields: []}}
+    OutputConflict:
+      description: Конфликт существующего выходного файла/каталога; не конфликт одинакового name.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: output_conflict, message: Выходные материалы уже существуют, fields: []}}
+    SourceError:
+      description: Сетевой/HTTP сбой источника, redirect, неполная задача, разметка или неподдерживаемый ресурс.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: source_error, message: Не удалось получить полные данные источника, fields: []}}
+    SourceTimeout:
+      description: Достоверно распознанный тайм-аут HTTPX; не общий таймер длительного экспорта.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: source_timeout, message: Источник не ответил вовремя, fields: []}}
+    ExportError:
+      description: Ошибка рендеринга/записи/публикации; export_failed, либо internal_error для непредвиденного сбоя.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: export_failed, message: Не удалось подготовить все материалы работы, fields: []}}
+    InternalError:
+      description: Непредвиденная ошибка сервера или чтения метаданных; internal_error.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: internal_error, message: Не удалось выполнить операцию, fields: []}}
+    ProtocolError:
+      description: Протокольная ошибка API, в частности 405; invalid_request. Не HTML UI fallback.
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+          example: {error: {code: invalid_request, message: Метод запроса не поддерживается, fields: []}}
+  examples:
+    SearchPage:
+      summary: Синтетический пример карточки; не утверждение о текущем содержимом ID.
+      value:
+        requested_ege_number: 5
+        ege_number: 5
+        total: 2
+        offset: 0
+        limit: 1
+        next_offset: 1
+        source_url: https://kpolyakov.spb.ru/school/ege/gen.php?action=viewAllEgeNo&egeId=5
+        tasks:
+          - id: 42
+            ege_numbers: [5]
+            statement: Число 2 в степени 3. См. рисунок.
+            statement_html: '<p>Число 2<sup>3</sup>.</p><img src="http://127.0.0.1:8000/api/v1/tasks/42/resources/image?url=https%3A%2F%2Fkpolyakov.spb.ru%2Fcms%2Fimages%2F42.gif" alt="Рисунок">'
+            source_url: https://kpolyakov.spb.ru/school/ege/gen.php?action=viewTopic&topicId=42
+            listing_url: https://kpolyakov.spb.ru/school/ege/gen.php?action=viewAllEgeNo&egeId=5
+            images:
+              - http://127.0.0.1:8000/api/v1/tasks/42/resources/image?url=https%3A%2F%2Fkpolyakov.spb.ru%2Fcms%2Fimages%2F42.gif
+            attachments: []
+    PdfWork:
+      summary: Готовая работа без приложений; пример формата, не результат запуска.
+      value:
+        work_id: 663a0971-683f-4dba-b5ec-54f43080a001
+        name: Работа 2026-10-27 18:00:00
+        created_at: '2026-10-27T18:00:00Z'
+        topic_ids: [9048, 9080, 9175]
+        count: 3
+        attachments: []
+        result:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a001/files/result
+          filename: work.pdf
+          media_type: application/pdf
+          audience: student
+        pdf:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a001/files/pdf
+          filename: work.pdf
+          media_type: application/pdf
+          audience: preview
+        archive: null
+        answers:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a001/files/answers
+          filename: work.answers.txt
+          media_type: text/plain; charset=utf-8
+          audience: teacher
+        sources:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a001/files/sources
+          filename: work.sources.json
+          media_type: application/json
+          audience: teacher
+    ZipWork:
+      summary: Готовая работа с приложением; пример формата, не результат запуска.
+      value:
+        work_id: 663a0971-683f-4dba-b5ec-54f43080a002
+        name: Домашняя работа
+        created_at: '2026-10-27T18:01:00Z'
+        topic_ids: [9175, 9111]
+        count: 2
+        attachments: [2.ods]
+        result:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a002/files/result
+          filename: work.zip
+          media_type: application/zip
+          audience: student
+        pdf:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a002/files/pdf
+          filename: work.pdf
+          media_type: application/pdf
+          audience: preview
+        archive:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a002/files/archive
+          filename: work.zip
+          media_type: application/zip
+          audience: student
+        answers:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a002/files/answers
+          filename: work.answers.txt
+          media_type: text/plain; charset=utf-8
+          audience: teacher
+        sources:
+          url: http://127.0.0.1:8000/api/v1/works/663a0971-683f-4dba-b5ec-54f43080a002/files/sources
+          filename: work.sources.json
+          media_type: application/json
+          audience: teacher
+    Sources:
+      summary: Синтетический пример структуры sources; контрольная сумма иллюстративная.
+      value:
+        created_at: '2026-10-27T18:00:00Z'
+        format_version: 1
+        tasks:
+          - id: 42
+            ege_numbers: [5]
+            source_url: https://kpolyakov.spb.ru/school/ege/gen.php?action=viewTopic&topicId=42
+            listing_url: https://kpolyakov.spb.ru/school/ege/gen.php?action=viewAllEgeNo&egeId=5
+            statement_html: Число 2<sup>3</sup>
+            statement: Число 2 в степени 3
+            answer_html: '8'
+            answer: '8'
+            images: []
+            attachments: []
+        pdf_sha256: '0000000000000000000000000000000000000000000000000000000000000000'
+        attachments: []
+        attachment_map: []
