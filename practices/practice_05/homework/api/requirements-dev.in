@@ -1,0 +1,6 @@
+-r requirements-api.txt
+pytest>=8,<10
+ruff>=0.11,<1
+openapi-spec-validator>=0.8,<1
+jsonschema>=4.24,<5
+PyYAML>=6,<7

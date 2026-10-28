@@ -15,6 +15,11 @@ from playwright.sync_api import sync_playwright
 
 from polyakov import SourceError
 
+
+class OutputConflictError(SourceError):
+    """Existing output must not be overwritten; compatible with SourceError callers."""
+
+
 CSS = """
 @page { size: A4; margin: 18mm; }
 body { font-family: 'Times New Roman', 'Liberation Serif', serif;
@@ -93,7 +98,7 @@ def export_pdf(bank, topic_ids, output_path):
     assets_path = path.with_suffix(".files")
     archive_path = path.with_suffix(".zip")
     if any(p.exists() or p.is_symlink() for p in (path, manifest_path, answers_path, assets_path, archive_path)):
-        raise SourceError("Файл или сопутствующие материалы уже существуют; выберите новое имя")
+        raise OutputConflictError("Файл или сопутствующие материалы уже существуют; выберите новое имя")
     tasks = [bank.get(ident) for ident in topic_ids]
     answers = "\n".join(answer_line(i, task) for i, task in enumerate(tasks, 1))
     sections = []
@@ -163,7 +168,7 @@ def export_pdf(bank, topic_ids, output_path):
                 for filename, data in attachments.items():
                     archive.writestr(assets_path.name + "/" + filename, data)
     except FileExistsError as exc:
-        raise SourceError("Файл или сопутствующие материалы уже существуют; выберите новое имя") from exc
+        raise OutputConflictError("Файл или сопутствующие материалы уже существуют; выберите новое имя") from exc
     return {"pdf": str(path), "sources": str(manifest_path), "answers_file": str(answers_path),
             "answers": answers, "count": len(tasks), "attachments": list(attachments),
             "result_file": str(archive_path if attachments else path),

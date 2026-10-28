@@ -1,9 +1,11 @@
 # Quickstart и будущая приёмка HTTP-слоя
 
 **Дата**: 2026-10-27. **Статус**: руководство будущей проверки согласованного API `1.0.0`.
-Приложение, requirements-api.txt и тесты пока не созданы; приведённые команды запуска
-и сценарии не выдаются за уже выполненные. Сейчас проверяются документы/общий YAML
-и отдельно поведение выбранной библиотеки FileResponse, без приложения ДЗ 5.
+API и его проверки реализованы. Приведённые ниже сценарии остаются руководством
+приёмки; фактически выполненные прогоны отдельно записаны в
+[api-verification.md](../../../evidence/api-verification.md).
+LIVE-UI пока заблокирован отсутствием настоящих index/assets; тестовая статика
+не считается готовым компонентом UI. Исходные снимки требований не переписываются.
 Основные ссылки: [контракт](../../../contracts/api-v1.yaml),
 [модель](data-model.md), [план](plan.md), [соглашения](../../../evidence/agreements.md).
 
@@ -21,20 +23,21 @@ uvx --from openapi-spec-validator openapi-spec-validator ../contracts/api-v1.yam
 При изменении примеров дополнительно проверять соответствие JSON-примеров их схемам.
 Не копировать общий YAML в api/specs или UI.
 
-## 2. Подготовить окружение после реализации
+## 2. Подготовить окружение и запустить API
 
 Предварительные условия: контракт согласован; Python 3.11+, доступный исходный проект
 ДЗ 3, зависимости FastAPI/Uvicorn и исходного экспортёра, установленный Chromium,
-файлы UI `index.html` и `assets/` готовы. requirements-api.txt должен включать
-совместимые закреплённые зависимости API и ДЗ 3 без копирования исходных модулей.
+файлы UI `index.html` и `assets/` нужны для настоящего браузерного прогона.
+Без них API доступен, а статика возвращает 404. Закреплённые зависимости API/ДЗ 3
+содержатся в requirements-api.txt, проверок — requirements-dev.txt; исходные модули не скопированы.
 Выбранный baseline файлового транспорта — FastAPI 0.162.0 и Starlette 1.10.0.
 При изменении Starlette повторно сверить Range-исключения с общим контрактом.
 
-Из корня API после появления файлов реализации:
+Из корня API, при установленном uv:
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-api.txt
+uv venv .venv
+uv pip sync --python .venv/bin/python requirements-dev.txt
 .venv/bin/python -m playwright install chromium
 .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
 ```
@@ -170,10 +173,14 @@ JSON-ошибку, не index.html. Во время долгого экспор�
 
 ## 8. Регрессии и фиксация фактических результатов
 
-После создания тестов API:
+Для автономных тестов API:
 
 ```bash
-.venv/bin/python -m pytest tests
+.venv/bin/python -m pytest -q
+.venv/bin/python -m ruff check app tests
+.venv/bin/python -m pytest -q -m controlled
+.venv/bin/python -m pytest -q -m real_local
+.venv/bin/python -m pytest -q -s -m live_api tests/live/test_api_live.py
 ```
 
 В `practices/practice_03/homework/` отдельно выполнить существующие `make check`
@@ -189,4 +196,8 @@ JSON-ошибку, не index.html. Во время долгого экспор�
 При уточнении контракта отдельно выполнена диагностика библиотеки FileResponse
 во временном окружении: полный 200, одиночный/multipart 206, два текстовых 400
 и пустой 416 подтверждены фактически; подробности — research.md, R-09.
-Приложение, его тесты, исходный экспортёр и MCP этим прогоном не проверялись.
+Приложение, его тесты, исходный экспортёр и MCP тем историческим прогоном не проверялись.
+В этапе реализации они проверены отдельно: автономные CONTROLLED/REAL-LOCAL,
+LIVE-API с настоящим сайтом и процессом HTTP, существующие make check/make demo ДЗ 3.
+Точные исходы, журналы, UUID и ограничения находятся в api-verification.md.
+Проверки, требующие настоящего UI, этим этапом не закрыты.
