@@ -1,0 +1,4 @@
+# Browser traces, screenshots, downloads and local pytest output.
+.test-artifacts/
+test-results/
+.env*

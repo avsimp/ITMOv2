@@ -1,8 +1,9 @@
-# Quickstart: будущая проверка UI
+# Quickstart: запуск и проверка UI
 
-**Дата**: 2026-10-27. **Статус**: руководство для проверки после реализации.
-HTML/CSS/JavaScript, тесты и API-приложение в этом этапе не создавались и не запускались.
-Ни один ожидаемый результат ниже не является сообщением об успешном прогоне.
+**Дизайн**: 2026-10-27. **Реализация и проверки**: 2026-10-28.
+UI реализован. Фактические результаты — в [ui-verification.md](../../../evidence/ui-verification.md);
+сценарии ниже остаются критериями, а не утверждением, что каждый из них уже пройден.
+Открыты pre-header TCP replay в Chromium и запуск Firefox.
 
 Ссылки: [план](plan.md), [модель](data-model.md),
 [взаимодействие](contracts/README.md), [сверка](contract-review.md),
@@ -26,13 +27,16 @@ HTML/CSS/JavaScript, тесты и API-приложение в этом этап
 Из `practices/practice_05/homework/api/` выполнить команды, предложенные планом API:
 
 ```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-api.txt
+uv venv .venv
+uv pip sync --python .venv/bin/python requirements-dev.txt
 .venv/bin/python -m playwright install chromium
 .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
 ```
 
 Для браузерных проверок окружение должно также содержать pytest и Playwright.
+Для дополнительной проверки Firefox установить `.venv/bin/python -m playwright install firefox`;
+в текущем окружении после загрузки браузера остаётся ошибка запуска профиля,
+поэтому результат Firefox не объявлен успешным.
 Отдельный frontend-пакетный менеджер или UI dev-сервер не нужен. Открыть
 `http://127.0.0.1:8000/`, в Network проверить `/assets/styles.css`, модули JS и
 `/api/v1`. Не открывать index.html через file:// и не запускать общий файловый сервер
@@ -153,13 +157,18 @@ ID из примеров контракта синтетические или и
 
 ## 9. Автоматизированная проверка и отчёт
 
-После реализации будущих `ui/tests/test_ui.py`, из каталога API при запущенном сервере:
+Тесты реализованы. Из каталога UI (каждый запуск поднимает свой API и изолированное storage):
 
 ```bash
-.venv/bin/python -m pytest ../ui/tests -q
+../api/.venv/bin/python -m pytest -q -m controlled
+../api/.venv/bin/python -m pytest -q -m real_local
+../api/.venv/bin/python -m pytest tests/test_ui.py -q -s -m live_ui
+../api/.venv/bin/python -m pytest tests/test_ui.py -q -s -m boundary_probe
 ```
 
 Контролируемые сценарии Playwright проверяют ошибки, гонки, блокировки и лимиты;
+`real_local` использует настоящий UI/API/Bank/export_pdf, заменяя только сырой внешний
+HTTP-источник; это воспроизводимая проверка SC-002, не живой сайт.
 сквозные сценарии с реальным API/Bank/export выполняются отдельно без перехватов
 и явно помечаются в отчёте. Команды API-тестов и существующих регрессий MCP —
 в API quickstart; их выполняет команда API после затрагивающих интеграцию изменений.
@@ -167,3 +176,9 @@ ID из примеров контракта синтетические или и
 Фиксировать фактическую команду/шаги, версию браузера, версию контракта, выбранные ID,
 наблюдаемый исход и доступные PDF/ZIP/логи. Результат заглушки не доказывает работу
 реального источника, отсутствие живой сети отмечается блокером соответствующего сценария.
+
+`boundary_probe` — отдельный известный непройденный сценарий разрыва до заголовков:
+в Chromium наблюдается транспортная повторная отправка при одном Fetch и две работы
+на сервере. Он не помечен xfail и не включается в успешный счётчик controlled/live_ui.
+Подробное воспроизведение и вопрос к API — в ui-verification.md. В обычном `live_ui`
+проверяется реальный разрыв после заголовков, до полного JSON: unknown и отсутствие retry.
