@@ -1,0 +1,474 @@
+{
+  "base_url": "http://127.0.0.1:65086",
+  "service_sha256": "254e2ebfe38c7fbf8d2201383034bbadbf2fdc0f4ee2acb5ed18446fd6b4be96",
+  "requests": [
+    {
+      "label": "login-alice",
+      "request": {
+        "method": "POST",
+        "path": "/login",
+        "body": {
+          "username": "alice",
+          "password": "learn-alice"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "status": 200,
+      "response": {
+        "token": "<SESSION_ALICE>"
+      }
+    },
+    {
+      "label": "login-bob",
+      "request": {
+        "method": "POST",
+        "path": "/login",
+        "body": {
+          "username": "bob",
+          "password": "learn-bob"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "status": 200,
+      "response": {
+        "token": "<SESSION_BOB>"
+      }
+    },
+    {
+      "label": "login-staff",
+      "request": {
+        "method": "POST",
+        "path": "/login",
+        "body": {
+          "username": "staff",
+          "password": "learn-staff"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "status": 200,
+      "response": {
+        "token": "<SESSION_STAFF>"
+      }
+    },
+    {
+      "label": "V01-anonymous-profile",
+      "request": {
+        "method": "GET",
+        "path": "/profile?id=1",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "status": 401,
+      "response": {
+        "error": "login required"
+      }
+    },
+    {
+      "label": "V02-foreign-profile",
+      "request": {
+        "method": "GET",
+        "path": "/profile?id=2",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    },
+    {
+      "label": "V02-orders",
+      "request": {
+        "method": "GET",
+        "path": "/orders",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 200,
+      "response": [
+        {
+          "id": 1,
+          "owner": 1,
+          "product": "chair",
+          "price": 5000.0
+        }
+      ]
+    },
+    {
+      "label": "V02-foreign-context",
+      "request": {
+        "method": "GET",
+        "path": "/assistant/context?order_id=2",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    },
+    {
+      "label": "V03-profile-sql",
+      "request": {
+        "method": "GET",
+        "path": "/profile?id=1%20OR%201=1",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 400,
+      "response": {
+        "error": "invalid id"
+      }
+    },
+    {
+      "label": "V03-search-sql",
+      "request": {
+        "method": "GET",
+        "path": "/search?q=%27%20OR%201=1--",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 200,
+      "response": []
+    },
+    {
+      "label": "V03-context-sql",
+      "request": {
+        "method": "GET",
+        "path": "/assistant/context?order_id=1%20OR%201=1",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 400,
+      "response": {
+        "error": "invalid order"
+      }
+    },
+    {
+      "label": "V04-role-spoof",
+      "request": {
+        "method": "GET",
+        "path": "/admin/export",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>",
+          "X-Role": "staff"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "staff only"
+      }
+    },
+    {
+      "label": "V05-price",
+      "request": {
+        "method": "POST",
+        "path": "/orders",
+        "body": {
+          "product": "chair",
+          "price": -1
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 201,
+      "response": {
+        "id": 3,
+        "owner": 1,
+        "product": "chair",
+        "price": 5000
+      }
+    },
+    {
+      "label": "V06-foreign-file",
+      "request": {
+        "method": "GET",
+        "path": "/files?user=bob",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    },
+    {
+      "label": "V06-traversal",
+      "request": {
+        "method": "GET",
+        "path": "/files?path=../../private/operator-note.txt",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    },
+    {
+      "label": "V07-logs-customer",
+      "request": {
+        "method": "GET",
+        "path": "/debug/logs",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "staff only"
+      }
+    },
+    {
+      "label": "V07-logs-staff",
+      "request": {
+        "method": "GET",
+        "path": "/debug/logs",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_STAFF>"
+        }
+      },
+      "status": 200,
+      "response": [
+        {
+          "method": "POST",
+          "path": "/login"
+        },
+        {
+          "method": "POST",
+          "path": "/login"
+        },
+        {
+          "method": "POST",
+          "path": "/login"
+        },
+        {
+          "method": "GET",
+          "path": "/profile"
+        },
+        {
+          "method": "GET",
+          "path": "/profile"
+        },
+        {
+          "method": "GET",
+          "path": "/orders"
+        },
+        {
+          "method": "GET",
+          "path": "/assistant/context"
+        },
+        {
+          "method": "GET",
+          "path": "/profile"
+        },
+        {
+          "method": "GET",
+          "path": "/search"
+        },
+        {
+          "method": "GET",
+          "path": "/assistant/context"
+        },
+        {
+          "method": "GET",
+          "path": "/admin/export"
+        },
+        {
+          "method": "POST",
+          "path": "/orders"
+        },
+        {
+          "method": "GET",
+          "path": "/files"
+        },
+        {
+          "method": "GET",
+          "path": "/files"
+        },
+        {
+          "method": "GET",
+          "path": "/debug/logs"
+        },
+        {
+          "method": "GET",
+          "path": "/debug/logs"
+        }
+      ]
+    },
+    {
+      "label": "V08-store-xss",
+      "request": {
+        "method": "POST",
+        "path": "/reviews",
+        "body": {
+          "product": "chair",
+          "text": "<script>alert(\"TEST\")</script>"
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 201,
+      "response": {
+        "saved": true
+      }
+    },
+    {
+      "label": "V08-view-xss",
+      "request": {
+        "method": "GET",
+        "path": "/reviews/view",
+        "body": null,
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 200,
+      "response": "<html><body><p>&lt;script&gt;alert(&quot;TEST&quot;)&lt;/script&gt;</p></body></html>"
+    },
+    {
+      "label": "V09-read-secret",
+      "request": {
+        "method": "POST",
+        "path": "/assistant/execute",
+        "body": {
+          "decision": {
+            "tool": "read_file",
+            "arguments": {
+              "path": "private/operator-note.txt"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    },
+    {
+      "label": "V09-export",
+      "request": {
+        "method": "POST",
+        "path": "/assistant/execute",
+        "body": {
+          "decision": {
+            "tool": "export_profiles"
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    },
+    {
+      "label": "V11-invalid-body",
+      "request": {
+        "method": "POST",
+        "path": "/login",
+        "body": [],
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "status": 400,
+      "response": {
+        "error": "invalid request"
+      }
+    },
+    {
+      "label": "V12-large-review",
+      "request": {
+        "method": "POST",
+        "path": "/reviews",
+        "body": {
+          "product": "chair",
+          "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 400,
+      "response": {
+        "error": "invalid review"
+      }
+    },
+    {
+      "label": "V09-delete",
+      "request": {
+        "method": "POST",
+        "path": "/assistant/execute",
+        "body": {
+          "decision": {
+            "tool": "delete_tree",
+            "arguments": {
+              "path": "."
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "X-Token": "<SESSION_ALICE>"
+        }
+      },
+      "status": 403,
+      "response": {
+        "error": "forbidden"
+      }
+    }
+  ],
+  "sandbox_exists_after_delete": true
+}

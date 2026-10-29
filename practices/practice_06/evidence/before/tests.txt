@@ -1,0 +1,577 @@
+exit_code=1
+test_health_and_not_found (test_http.HttpTest.test_health_and_not_found) ... ok
+test_login_and_purchase_over_http (test_http.HttpTest.test_login_and_purchase_over_http) ... ok
+test_transport_only_binds_loopback (test_http.HttpTest.test_transport_only_binds_loopback) ... ok
+test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) ... 
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/login', body=[]) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/login', body={'username': []}) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/orders', body={}) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/orders', body={'product': []}) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/reviews', body={'product': 'chair', 'text': []}) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/assistant/execute', body={}) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/assistant/execute', body={'decision': []}) ... FAIL
+  test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/assistant/execute', body={'decision': {'tool': 'read_file', 'arguments': []}}) ... FAIL
+test_context_separates_untrusted_reviews_and_limits_tools (test_security.SecurityTest.test_context_separates_untrusted_reviews_and_limits_tools) ... ERROR
+test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) ... 
+  test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='alice', path='files/bob/receipt.txt') ... FAIL
+  test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='alice', path='private/operator-note.txt') ... FAIL
+  test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='alice', path='files/alice/../bob/receipt.txt') ... FAIL
+  test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='staff', path='files/bob/receipt.txt') ... FAIL
+  test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='staff', path='private/operator-note.txt') ... FAIL
+  test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='staff', path='files/alice/../bob/receipt.txt') ... FAIL
+test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) ... 
+  test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='alice', tool='export_profiles') ... FAIL
+  test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='alice', tool='delete_tree') ... FAIL
+  test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='staff', tool='export_profiles') ... FAIL
+  test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='staff', tool='delete_tree') ... FAIL
+test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) ... FAIL
+test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) ... 
+  test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?user=bob') ... FAIL
+  test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?path=../bob/receipt.txt') ... FAIL
+  test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?path=../../private/operator-note.txt') ... FAIL
+  test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?user=../private&path=operator-note.txt') ... FAIL
+test_health_and_not_found (test_security.SecurityTest.test_health_and_not_found) ... ok
+test_login_and_purchase_over_http (test_security.SecurityTest.test_login_and_purchase_over_http) ... ok
+test_logs_are_staff_only_and_redacted (test_security.SecurityTest.test_logs_are_staff_only_and_redacted) ... FAIL
+test_oversized_review_and_query_rejected (test_security.SecurityTest.test_oversized_review_and_query_rejected) ... FAIL
+test_owner_isolation (test_security.SecurityTest.test_owner_isolation) ... FAIL
+test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) ... 
+  test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price=-1) ... FAIL
+  test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price=0) ... FAIL
+  test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price=0.01) ... FAIL
+  test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price='free') ... FAIL
+  test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price={'nested': True}) ... FAIL
+test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) ... 
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/profile?id=1') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/search?q=TEST') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/orders') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/files') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/debug/logs') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/assistant/context') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/admin/export') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/reviews') ... FAIL
+  test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/assistant/execute') ... FAIL
+test_raw_transport_errors_do_not_disclose_details (test_security.SecurityTest.test_raw_transport_errors_do_not_disclose_details) ... 
+  test_raw_transport_errors_do_not_disclose_details (test_security.SecurityTest.test_raw_transport_errors_do_not_disclose_details) (data=b'{broken') ... FAIL
+/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:484: ResourceWarning: Implicitly cleaning up <HTTPError 500: 'Internal Server Error'>
+  _warnings.warn(self.warn_message, ResourceWarning)
+  test_raw_transport_errors_do_not_disclose_details (test_security.SecurityTest.test_raw_transport_errors_do_not_disclose_details) (data=b'\xff') ... FAIL
+test_review_html_is_escaped (test_security.SecurityTest.test_review_html_is_escaped) ... FAIL
+test_role_header_never_grants_privilege (test_security.SecurityTest.test_role_header_never_grants_privilege) ... FAIL
+test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data) ... 
+  test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data) (path='/profile?id=1%20OR%201=1') ... FAIL
+  test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data) (path='/assistant/context?order_id=1%20OR%201=1') ... FAIL
+test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data) ... FAIL
+test_transport_only_binds_loopback (test_security.SecurityTest.test_transport_only_binds_loopback) ... ok
+test_delete_of_fixture_root_stays_inside_exercise (test_service.SandboxTest.test_delete_of_fixture_root_stays_inside_exercise) ... ok
+test_external_directory_cannot_be_deleted (test_service.SandboxTest.test_external_directory_cannot_be_deleted) ... ok
+test_parent_paths_cannot_escape_exercise (test_service.SandboxTest.test_parent_paths_cannot_escape_exercise) ... ok
+test_symlink_cannot_escape_exercise (test_service.SandboxTest.test_symlink_cannot_escape_exercise) ... ok
+test_assistant_can_return_own_receipt (test_service.ShopTest.test_assistant_can_return_own_receipt) ... ok
+test_customer_can_buy_at_catalog_price (test_service.ShopTest.test_customer_can_buy_at_catalog_price) ... ok
+test_health_and_catalog (test_service.ShopTest.test_health_and_catalog) ... ok
+test_own_profile_and_receipt (test_service.ShopTest.test_own_profile_and_receipt) ... ok
+test_review_can_be_submitted_and_viewed (test_service.ShopTest.test_review_can_be_submitted_and_viewed) ... ok
+test_staff_can_export_with_staff_session (test_service.ShopTest.test_staff_can_export_with_staff_session) ... ok
+test_tokens_identify_distinct_users (test_service.ShopTest.test_tokens_identify_distinct_users) ... ok
+test_unknown_product_rejected (test_service.ShopTest.test_unknown_product_rejected) ... ok
+test_wrong_password_rejected (test_service.ShopTest.test_wrong_password_rejected) ... ok
+
+======================================================================
+ERROR: test_context_separates_untrusted_reviews_and_limits_tools (test_security.SecurityTest.test_context_separates_untrusted_reviews_and_limits_tools)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 109, in test_context_separates_untrusted_reviews_and_limits_tools
+    context = json.loads(json.loads(text)["prompt"])
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/login', body=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/login', body={'username': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/orders', body={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/orders', body={'product': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/reviews', body={'product': 'chair', 'text': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 201 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/assistant/execute', body={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/assistant/execute', body={'decision': []})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_bad_json_shapes_are_client_errors (test_security.SecurityTest.test_bad_json_shapes_are_client_errors) (path='/assistant/execute', body={'decision': {'tool': 'read_file', 'arguments': []}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 125, in test_bad_json_shapes_are_client_errors
+    self.assertEqual(status, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='alice', path='files/bob/receipt.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 91, in test_executor_cannot_read_foreign_or_private_files
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": "read_file", "arguments": {"path": path}},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='alice', path='private/operator-note.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 91, in test_executor_cannot_read_foreign_or_private_files
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": "read_file", "arguments": {"path": path}},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='alice', path='files/alice/../bob/receipt.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 91, in test_executor_cannot_read_foreign_or_private_files
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": "read_file", "arguments": {"path": path}},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='staff', path='files/bob/receipt.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 91, in test_executor_cannot_read_foreign_or_private_files
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": "read_file", "arguments": {"path": path}},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='staff', path='private/operator-note.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 91, in test_executor_cannot_read_foreign_or_private_files
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": "read_file", "arguments": {"path": path}},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_cannot_read_foreign_or_private_files (test_security.SecurityTest.test_executor_cannot_read_foreign_or_private_files) (user='staff', path='files/alice/../bob/receipt.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 91, in test_executor_cannot_read_foreign_or_private_files
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": "read_file", "arguments": {"path": path}},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='alice', tool='export_profiles')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 99, in test_executor_denies_export_and_delete_even_for_staff
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": tool, "arguments": arguments},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='alice', tool='delete_tree')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 99, in test_executor_denies_export_and_delete_even_for_staff
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": tool, "arguments": arguments},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='staff', tool='export_profiles')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 99, in test_executor_denies_export_and_delete_even_for_staff
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": tool, "arguments": arguments},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff) (user='staff', tool='delete_tree')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 99, in test_executor_denies_export_and_delete_even_for_staff
+    self.assertEqual(self.call("POST", "/assistant/execute", {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "decision": {"tool": tool, "arguments": arguments},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    }, self.login(user))[0], 403)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 403
+
+======================================================================
+FAIL: test_executor_denies_export_and_delete_even_for_staff (test_security.SecurityTest.test_executor_denies_export_and_delete_even_for_staff)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 102, in test_executor_denies_export_and_delete_even_for_staff
+    self.assertTrue(self.shop.sandbox.root.exists())
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?user=bob')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 66, in test_file_owner_and_canonical_path
+    self.assertEqual(self.call("GET", path, headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 403
+
+======================================================================
+FAIL: test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?path=../bob/receipt.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 66, in test_file_owner_and_canonical_path
+    self.assertEqual(self.call("GET", path, headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 403
+
+======================================================================
+FAIL: test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?path=../../private/operator-note.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 66, in test_file_owner_and_canonical_path
+    self.assertEqual(self.call("GET", path, headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 403
+
+======================================================================
+FAIL: test_file_owner_and_canonical_path (test_security.SecurityTest.test_file_owner_and_canonical_path) (path='/files?user=../private&path=operator-note.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 66, in test_file_owner_and_canonical_path
+    self.assertEqual(self.call("GET", path, headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 403
+
+======================================================================
+FAIL: test_logs_are_staff_only_and_redacted (test_security.SecurityTest.test_logs_are_staff_only_and_redacted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 70, in test_logs_are_staff_only_and_redacted
+    self.assertEqual(self.call("GET", "/debug/logs", headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_oversized_review_and_query_rejected (test_security.SecurityTest.test_oversized_review_and_query_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 141, in test_oversized_review_and_query_rejected
+    self.assertEqual(self.call("POST", "/reviews", {"product": "chair", "text": "x" * 5000}, auth)[0], 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 201 != 400
+
+======================================================================
+FAIL: test_owner_isolation (test_security.SecurityTest.test_owner_isolation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 31, in test_owner_isolation
+    self.assertEqual(self.call("GET", "/profile?id=2", headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price=-1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 56, in test_price_is_always_from_catalog
+    self.assertEqual(json.loads(text)["price"], 5000)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: -1 != 5000
+
+======================================================================
+FAIL: test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 56, in test_price_is_always_from_catalog
+    self.assertEqual(json.loads(text)["price"], 5000)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 5000
+
+======================================================================
+FAIL: test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price=0.01)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 56, in test_price_is_always_from_catalog
+    self.assertEqual(json.loads(text)["price"], 5000)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.01 != 5000
+
+======================================================================
+FAIL: test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price='free')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 56, in test_price_is_always_from_catalog
+    self.assertEqual(json.loads(text)["price"], 5000)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'free' != 5000
+
+======================================================================
+FAIL: test_price_is_always_from_catalog (test_security.SecurityTest.test_price_is_always_from_catalog) (price={'nested': True})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 55, in test_price_is_always_from_catalog
+    self.assertEqual(status, 201)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: 500 != 201
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/profile?id=1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/search?q=TEST')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/orders')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/files')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/debug/logs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/assistant/context')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/admin/export')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 403 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/reviews')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 201 != 401
+
+======================================================================
+FAIL: test_private_endpoints_require_session (test_security.SecurityTest.test_private_endpoints_require_session) (path='/assistant/execute')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 27, in test_private_endpoints_require_session
+    self.assertEqual(self.call(method, path, body)[0], 401)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 401
+
+======================================================================
+FAIL: test_raw_transport_errors_do_not_disclose_details (test_security.SecurityTest.test_raw_transport_errors_do_not_disclose_details) (data=b'{broken')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 136, in test_raw_transport_errors_do_not_disclose_details
+    self.assertEqual(caught.exception.code, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_raw_transport_errors_do_not_disclose_details (test_security.SecurityTest.test_raw_transport_errors_do_not_disclose_details) (data=b'\xff')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 136, in test_raw_transport_errors_do_not_disclose_details
+    self.assertEqual(caught.exception.code, 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 500 != 400
+
+======================================================================
+FAIL: test_review_html_is_escaped (test_security.SecurityTest.test_review_html_is_escaped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 83, in test_review_html_is_escaped
+    self.assertNotIn("<script>", text)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: '<script>' unexpectedly found in '<html><body><p>[]</p><p>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p><p>ok</p><p><script>alert("TEST")</script></p></body></html>'
+
+======================================================================
+FAIL: test_role_header_never_grants_privilege (test_security.SecurityTest.test_role_header_never_grants_privilege)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 47, in test_role_header_never_grants_privilege
+    self.assertEqual(self.call("GET", "/admin/export", headers=auth)[0], 403)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data) (path='/profile?id=1%20OR%201=1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 41, in test_sql_injection_rejected_or_treated_as_data
+    self.assertEqual(self.call("GET", path, headers=auth)[0], 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 400
+
+======================================================================
+FAIL: test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data) (path='/assistant/context?order_id=1%20OR%201=1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 41, in test_sql_injection_rejected_or_treated_as_data
+    self.assertEqual(self.call("GET", path, headers=auth)[0], 400)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 400
+
+======================================================================
+FAIL: test_sql_injection_rejected_or_treated_as_data (test_security.SecurityTest.test_sql_injection_rejected_or_treated_as_data)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/var/folders/tm/hr2n2wwn2j3b1y2rbc1hq2nw0000gn/T/shop-tests-cb1b_f6o/test_security.py", line 43, in test_sql_injection_rejected_or_treated_as_data
+    self.assertEqual((status, json.loads(text)), (200, []))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (200, [{'id': 1, 'name': 'TEST_ALICE', 'email': [142 chars]B'}]) != (200, [])
+
+First differing element 1:
+[{'id': 1, 'name': 'TEST_ALICE', 'email': [141 chars]_B'}]
+[]
+
++ (200, [])
+- (200,
+-  [{'address': 'TEST_ADDRESS_A',
+-    'email': 'alice@example.invalid',
+-    'id': 1,
+-    'name': 'TEST_ALICE'},
+-   {'address': 'TEST_ADDRESS_B',
+-    'email': 'bob@example.invalid',
+-    'id': 2,
+-    'name': 'TEST_BOB'}])
+
+----------------------------------------------------------------------
+Ran 33 tests in 1.078s
+
+FAILED (failures=47, errors=1)
