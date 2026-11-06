@@ -1,0 +1,32 @@
+{
+  "sessionID": "ses_f13338ecfffeiIHNDWxns1AaiA",
+  "title": "New session - 2026-09-29T10:53:36.432Z",
+  "agent": "local-guide",
+  "model": {
+    "id": "itmo-agent",
+    "providerID": "ollama",
+    "variant": "default"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "part_type": "text",
+      "content": "\"Как запустить тесты? Укажи файл-источник.\""
+    },
+    {
+      "role": "assistant",
+      "part_type": "reasoning",
+      "content": "Из контекста задачи видно, что речь о практикуме 3 (practice_03/lab/demo), где нужно узнать, как запустить тесты. Мне нужно прочитать файлы из этой директории, чтобы найти информацию об инструкциях, конфигурационных файлах или readme-файлы с информацией о тестах."
+    },
+    {
+      "role": "assistant",
+      "part_type": "reasoning",
+      "content": "Нужно найти информацию о том, как запустить тесты. Сначала прочитаю README.md и Makefile, т.к. эти файлы обычно содержат инструкции по запуску тестов. Также посмотрю test_service.py на наличие комментариев с инструкциями."
+    },
+    {
+      "role": "assistant",
+      "part_type": "reasoning",
+      "content": "Указал источник информации — Makefile и README.md."
+    }
+  ]
+}

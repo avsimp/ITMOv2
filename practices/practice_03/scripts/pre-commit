@@ -1,0 +1,15 @@
+#!/bin/bash
+# Git запускает этот файл перед созданием коммита.
+set -uo pipefail
+
+root=$(git rev-parse --show-toplevel) || exit 1
+log=$(git rev-parse --path-format=absolute --git-path practice03-check.log) || exit 1
+
+{
+    printf '\nevent=pre-commit time=%s scope=working-tree\n' "$(date -u +%FT%TZ)"
+    printf 'command=make -C practices/practice_03 check\n'
+    make -C "$root/practices/practice_03" check
+    code=$?
+    printf 'event=pre-commit exit_code=%s\n' "$code"
+    exit "$code"
+} 2>&1 | tee -a "$log"

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Подборка — домашние работы</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script type="module" src="/assets/app.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <a class="brand" href="/">Подборка<span> / кабинет преподавателя</span></a>
+    <span class="local-badge">Локальное приложение · API 1.0.0</span>
+  </header>
+  <main>
+    <div class="intro">
+      <p class="eyebrow">ЕГЭ · Информатика</p>
+      <h1>Домашняя работа,<br>собранная вами</h1>
+      <p>Оригинальные задачи, нужный порядок и готовые материалы для ученика.</p>
+    </div>
+    <div class="workspace">
+      <section class="bank panel" aria-labelledby="bank-heading">
+        <div class="section-heading"><span class="step">01</span><div><h2 id="bank-heading">Банк задач</h2><p>Выберите номер и посмотрите условия</p></div></div>
+        <form id="search-form">
+          <div class="filters">
+            <div><label for="ege-number">Номер задания ЕГЭ</label><select id="ege-number" required><option value="">Выберите номер</option></select></div>
+            <div><label for="category">Категория</label><select id="category" disabled><option value="">Все категории</option></select></div>
+            <button id="search-button" type="submit" disabled>Найти задачи</button>
+          </div>
+        </form>
+        <div class="status-row"><p id="search-status" role="status" aria-live="polite" data-state="idle">Выберите номер ЕГЭ, чтобы начать поиск.</p><button id="retry-search" class="secondary" type="button" hidden>Повторить поиск</button></div>
+        <button id="retry-categories" class="secondary" type="button" hidden>Повторить загрузку категорий</button>
+        <div id="results" aria-label="Результаты поиска"></div>
+        <nav class="pagination" aria-label="Страницы результатов">
+          <button id="previous-page" class="secondary" type="button" disabled>Предыдущие</button>
+          <span id="page-range">Поиск ещё не выполнен</span>
+          <button id="next-page" class="secondary" type="button" disabled>Следующие</button>
+        </nav>
+      </section>
+      <aside class="assignment">
+        <section class="panel" aria-labelledby="selection-heading">
+          <div class="section-heading"><span class="step">02</span><div><h2 id="selection-heading">Ваша подборка</h2><p>Задайте содержание и порядок</p></div><span id="selection-count" class="count">0 / 100</span></div>
+          <p id="selection-empty" class="empty-hint">Добавьте хотя бы одну задачу из поиска.</p>
+          <ol id="selection" aria-label="Задачи в подборке"></ol>
+          <p id="selection-limit" class="hint" hidden>Достигнут предел 100 пунктов. Удалите пункт, чтобы добавить другой.</p>
+          <p class="hint">Блок 19–21 — один пункт. Поиск и листание не очищают подборку; она хранится в открытой странице.</p>
+        </section>
+        <section class="panel" aria-labelledby="export-heading">
+          <div class="section-heading"><span class="step">03</span><div><h2 id="export-heading">Готовая работа</h2><p>Ученический комплект и материалы для проверки</p></div></div>
+          <button id="create-work" type="button" disabled>Создать работу</button>
+          <p id="export-status" role="status" aria-live="polite" data-state="idle">Добавьте хотя бы одну задачу.</p>
+          <div id="work-result" hidden>
+            <h3 id="work-name"></h3><p id="work-count"></p>
+            <p id="work-version" class="hint"></p>
+            <p id="zip-hint" class="hint" hidden>Передайте ученику ZIP. Распакуйте архив целиком, сохранив PDF и папку приложений рядом.</p>
+            <div id="materials" class="materials"></div>
+            <a id="preview-pdf" target="_blank" rel="noopener" hidden>PDF для просмотра</a>
+            <button id="refresh-work" type="button" class="secondary">Обновить сведения о работе</button>
+            <p id="metadata-status" role="status"></p>
+          </div>
+          <p id="download-status" role="status" aria-live="polite" data-state="idle"></p>
+          <a id="save-file" class="save-link" hidden>Сохранить файл</a>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <footer>Условия — из банка К. Полякова. Ответы и источники доступны отдельно для готовой работы.</footer>
+</body>
+</html>

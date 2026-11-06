@@ -1,0 +1,24 @@
+# Local environments, dependencies and caches for both projects.
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.cache/
+.coverage
+htmlcov/
+
+# Runtime exports and metadata are not project configuration.
+/api/var/
+
+# Editor, OS and temporary files.
+.DS_Store
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
